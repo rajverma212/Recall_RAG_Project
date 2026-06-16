@@ -2,7 +2,7 @@
 
 **Created:** 2026-06-16  
 **Branch:** `production-hardening` (1 commit ahead of `origin/production-hardening`)  
-**Last commit:** `ed93fc2` — `feat: decouple LLM/embeddings behind providers and add observability`  
+**Last commit:** `c9e96ed` — `feat: decouple LLM/embeddings behind providers and add observability`  
 **Status:** All session work is **committed**. Push to remote when ready (`git push`).
 
 ---
@@ -20,13 +20,13 @@ This was a **production-readiness hardening pass** on the Hybrid RAG Platform (R
 | Frontend dashboard pages (Hallucination, Prompts, System) | ✅ Done |
 | Docs (audit report + case study) | ✅ Done |
 | Tests | ✅ **85 passing** (fully offline via Local provider) |
-| Git commit of this work | ✅ **`ed93fc2`** (not pushed yet) |
+| Git commit of this work | ✅ **`c9e96ed`** (not pushed yet) |
 
 ---
 
 ## 2. Git state (resume from here)
 
-**Committed in `ed93fc2`.** Working tree is clean.
+**Committed in `c9e96ed`.** Working tree is clean.
 
 ### Modified (14 files — now in commit)
 
@@ -225,7 +225,7 @@ I'm continuing work on the Hybrid RAG Platform at /Users/rajverma/RAG_Resume_Pro
 Read docs/CHECKPOINT.md first — it has the full session state.
 
 Context:
-- Branch: production-hardening (last commit ed93fc2, not pushed yet)
+- Branch: production-hardening (last commit c9e96ed, not pushed yet)
 - Production-hardening work is COMMITTED (provider abstraction, observability endpoints, 3 new frontend pages, audit docs)
 - 85 backend tests passing offline via LocalProvider
 - Default LLM is Anthropic (claude-sonnet-4-6); auto-falls back to LocalProvider with no API key
