@@ -36,6 +36,7 @@ class Bm25Retriever:
     def __init__(self) -> None:
         self._index = None  # BM25Okapi instance
         self._chunk_meta: list[dict] = []  # parallel list of chunk metadata
+        self._corpus_tokens: list[list[str]] = []  # parallel tokenised corpus
         self._cached_count: int = -1
 
     # ------------------------------------------------------------------
@@ -46,6 +47,7 @@ class Bm25Retriever:
         """Force a full index rebuild on the next search call."""
         self._index = None
         self._chunk_meta = []
+        self._corpus_tokens = []
         self._cached_count = -1
         logger.info("BM25 index invalidated")
 
@@ -68,6 +70,7 @@ class Bm25Retriever:
             return [], elapsed_ms
 
         tokens = _tokenize(query)
+        query_token_set = set(tokens)
         scores = self._index.get_scores(tokens)
 
         # Pair (original_index, score), sort descending, take top_k
@@ -76,8 +79,11 @@ class Bm25Retriever:
         chunks: list[RetrievedChunk] = []
         for rank, (idx, score) in enumerate(ranked, start=1):
             meta = self._chunk_meta[idx]
-            # Skip zero-score results (no overlap at all)
-            if score <= 0:
+            # On small corpora BM25Okapi's IDF can be <= 0 even for genuine
+            # matches (a term present in most/all docs), so we cannot filter on
+            # score. Instead skip only chunks that share NO query token at all —
+            # true non-matches — and keep the BM25 *ranking* intact for RRF.
+            if not (query_token_set & set(self._corpus_tokens[idx])):
                 continue
             chunks.append(
                 RetrievedChunk(
@@ -155,6 +161,7 @@ class Bm25Retriever:
             logger.warning("BM25: no non-duplicate chunks found in DB")
             self._index = None
             self._chunk_meta = []
+            self._corpus_tokens = []
             return
 
         try:
@@ -162,11 +169,13 @@ class Bm25Retriever:
 
             self._index = BM25Okapi(corpus_tokens)
             self._chunk_meta = meta_list
+            self._corpus_tokens = corpus_tokens
             logger.info(f"BM25: indexed {len(meta_list)} chunks")
         except Exception as exc:
             logger.error(f"BM25: failed to build index: {exc}")
             self._index = None
             self._chunk_meta = []
+            self._corpus_tokens = []
 
 
 # Module-level singleton

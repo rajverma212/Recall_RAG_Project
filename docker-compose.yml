@@ -37,9 +37,14 @@ services:
       QDRANT_HOST: qdrant
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       CHUNKING_STRATEGY: ${CHUNKING_STRATEGY:-recursive}
+      # So `python scripts/...` and `import app` resolve inside the container.
+      PYTHONPATH: /app
     volumes:
       - ragdata:/data
       - ./sample_data:/app/sample_data
+      # Mounted so seeding + evaluation scripts/reports work in-container.
+      - ./scripts:/app/scripts
+      - ./evaluation:/app/evaluation
     ports:
       - "8000:8000"
     depends_on:
@@ -50,10 +55,11 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: ../docker/frontend.Dockerfile
+      # Root context so the Dockerfile can COPY both frontend/ and docker/nginx.conf.
+      context: .
+      dockerfile: docker/frontend.Dockerfile
     environment:
-      VITE_API_BASE: ${VITE_API_BASE:-http://localhost:8000/v1}
+      VITE_API_BASE: ${VITE_API_BASE:-/v1}
     ports:
       - "5173:80"
     depends_on:

@@ -1,0 +1,11 @@
+# Used by the frontend image build (root context).
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/*.pyc
+.git
+.pytest_cache
+evaluation/reports
+sample_data/processed
+data

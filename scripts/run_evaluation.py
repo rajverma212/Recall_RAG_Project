@@ -29,7 +29,11 @@ from pathlib import Path
 # sys.path setup — must happen before any app imports
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_REPO_ROOT / "backend"))
+# Support both layouts: host repo-root (app lives in backend/app) and the
+# Docker container (app lives directly at /app/app, repo root mounted as /app).
+for _cand in (_REPO_ROOT / "backend", _REPO_ROOT):
+    if (_cand / "app").is_dir():
+        sys.path.insert(0, str(_cand))
 
 
 def _get_db():

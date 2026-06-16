@@ -16,9 +16,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Insert backend/ so `from app...` imports work
+# Support both layouts: host repo-root (backend/app) and container (/app/app).
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_REPO_ROOT / "backend"))
+for _cand in (_REPO_ROOT / "backend", _REPO_ROOT):
+    if (_cand / "app").is_dir():
+        sys.path.insert(0, str(_cand))
 
 from app.core.logging import get_logger  # noqa: E402
 
