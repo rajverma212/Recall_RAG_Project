@@ -188,3 +188,64 @@ export interface PromptVersion {
   is_active: boolean
   system_prompt: string
 }
+
+// ─── Providers ───────────────────────────────────────────────────────────────
+
+export interface LLMProviderInfo {
+  configured: boolean
+  active: string
+  model: string
+  input_price_per_1m: number
+  output_price_per_1m: number
+  available: string[]
+  keys_present: {
+    anthropic: boolean
+    openai: boolean
+  }
+}
+
+export interface EmbeddingProviderInfo {
+  configured: boolean
+  active: string
+  model: string
+  dim: number
+  available: string[]
+}
+
+export interface ProvidersResponse {
+  llm: LLMProviderInfo
+  embedding: EmbeddingProviderInfo
+}
+
+// ─── Health ──────────────────────────────────────────────────────────────────
+
+export interface HealthResponse {
+  status: string
+  app: string
+  environment: string
+  dependencies: {
+    postgres: boolean
+    qdrant: boolean
+  }
+}
+
+// ─── Metrics ─────────────────────────────────────────────────────────────────
+
+export interface StageMetrics {
+  count: number
+  errors: number
+  avg_ms: number
+  p95_ms: number
+  last_ms: number
+}
+
+export interface MetricsResponse {
+  uptime_seconds: number
+  stages: Record<string, StageMetrics>
+  queries: {
+    total_queries: number
+    avg_latency_ms: number
+    avg_confidence: number
+    low_confidence_rate: number
+  }
+}

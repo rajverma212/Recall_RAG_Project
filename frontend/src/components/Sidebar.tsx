@@ -7,6 +7,9 @@ import {
   FlaskConical,
   Activity,
   Layers,
+  ShieldAlert,
+  FileCode,
+  Server,
 } from 'lucide-react'
 
 interface NavItem {
@@ -17,11 +20,14 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: '/', label: 'Ask', icon: <MessageSquare size={18} /> },
-  { to: '/retrieval', label: 'Retrieval Inspector', icon: <Search size={18} /> },
   { to: '/documents', label: 'Documents', icon: <FileText size={18} /> },
+  { to: '/retrieval', label: 'Retrieval Inspector', icon: <Search size={18} /> },
   { to: '/evaluations', label: 'Evaluations', icon: <BarChart2 size={18} /> },
+  { to: '/hallucination', label: 'Hallucination', icon: <ShieldAlert size={18} /> },
   { to: '/analytics', label: 'Analytics', icon: <Activity size={18} /> },
   { to: '/experiments', label: 'Experiments', icon: <FlaskConical size={18} /> },
+  { to: '/prompts', label: 'Prompts', icon: <FileCode size={18} /> },
+  { to: '/system', label: 'System', icon: <Server size={18} /> },
 ]
 
 export function Sidebar() {

@@ -7,8 +7,11 @@ import type {
   EvaluationDetail,
   EvaluationRun,
   Experiment,
+  HealthResponse,
   IngestResponse,
+  MetricsResponse,
   PromptVersion,
+  ProvidersResponse,
   StreamEvent,
 } from './types'
 
@@ -132,4 +135,22 @@ export function createExperiment(body: Partial<Experiment>): Promise<Experiment>
 
 export function listPrompts(): Promise<PromptVersion[]> {
   return request<PromptVersion[]>('/prompts')
+}
+
+// ─── Providers ───────────────────────────────────────────────────────────────
+
+export function getProviders(): Promise<ProvidersResponse> {
+  return request<ProvidersResponse>('/providers')
+}
+
+// ─── Health ──────────────────────────────────────────────────────────────────
+
+export function getHealth(): Promise<HealthResponse> {
+  return request<HealthResponse>('/health')
+}
+
+// ─── Metrics ─────────────────────────────────────────────────────────────────
+
+export function getMetrics(): Promise<MetricsResponse> {
+  return request<MetricsResponse>('/metrics')
 }

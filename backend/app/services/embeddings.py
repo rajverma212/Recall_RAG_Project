@@ -1,67 +1,35 @@
-"""OpenAI embedding client with batching, cost accounting, and a deterministic
-offline fallback so the platform boots and the test-suite runs without a key.
+"""Embedding client — thin adapter over the embedding provider layer.
+
+Kept as a stable façade so retrieval / ingestion / dedup / semantic chunking
+continue to import ``get_embedding_client()`` unchanged while the actual backend
+(OpenAI / BGE / Voyage / Local) is selected by ``EMBEDDING_PROVIDER``.
 """
 from __future__ import annotations
 
-import hashlib
-import math
-
-from app.core.config import settings
 from app.core.logging import get_logger
+from app.providers.embeddings.factory import get_embedding_provider
 
 logger = get_logger(__name__)
 
 
 class EmbeddingResult:
-    def __init__(self, vectors: list[list[float]], tokens: int):
+    def __init__(self, vectors: list[list[float]], tokens: int, price_per_1m: float):
         self.vectors = vectors
         self.tokens = tokens
+        self._price_per_1m = price_per_1m
 
     @property
     def cost_usd(self) -> float:
-        return self.tokens / 1_000_000 * settings.embedding_price_per_1m
-
-
-def _fake_embed(text: str) -> list[float]:
-    """Deterministic pseudo-embedding for offline/dev/test use.
-
-    Hashes token buckets into a fixed-dim vector and L2-normalises it. This is
-    *not* semantically meaningful but is stable and unit-norm, which keeps the
-    cosine-based dedup and vector store code exercisable without an API key.
-    """
-    dim = settings.embedding_dim
-    vec = [0.0] * dim
-    for tok in text.lower().split():
-        h = int(hashlib.md5(tok.encode()).hexdigest(), 16)
-        vec[h % dim] += 1.0
-    norm = math.sqrt(sum(v * v for v in vec)) or 1.0
-    return [v / norm for v in vec]
+        return self.tokens / 1_000_000 * self._price_per_1m
 
 
 class EmbeddingClient:
-    def __init__(self) -> None:
-        self._client = None
-        if settings.openai_api_key:
-            try:
-                from openai import OpenAI
-
-                self._client = OpenAI(api_key=settings.openai_api_key)
-            except Exception as exc:  # pragma: no cover - defensive
-                logger.warning(f"OpenAI client init failed, using fallback: {exc}")
+    """Backward-compatible wrapper delegating to the active embedding provider."""
 
     def embed(self, texts: list[str]) -> EmbeddingResult:
-        if not texts:
-            return EmbeddingResult([], 0)
-        if self._client is None:
-            vectors = [_fake_embed(t) for t in texts]
-            tokens = sum(len(t.split()) for t in texts)
-            return EmbeddingResult(vectors, tokens)
-        resp = self._client.embeddings.create(
-            model=settings.embedding_model, input=texts
-        )
-        vectors = [d.embedding for d in resp.data]
-        tokens = resp.usage.total_tokens
-        return EmbeddingResult(vectors, tokens)
+        provider = get_embedding_provider()
+        batch = provider.embed(texts)
+        return EmbeddingResult(batch.vectors, batch.tokens, provider.price_per_1m)
 
     def embed_one(self, text: str) -> list[float]:
         return self.embed([text]).vectors[0]

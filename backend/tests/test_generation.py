@@ -326,7 +326,9 @@ class TestVerifier:
 
     def test_partial_accuracy_scoring(self):
         """Partially supported claims count 0.5 in accuracy computation."""
-        from app.verification.verifier import verify, _lexical_verify, LOW_THRESHOLD, HIGH_THRESHOLD
+        # The lexical entailment heuristic now lives in the Local provider.
+        from app.verification.verifier import verify
+        from app.providers.local_provider import LOW_THRESHOLD, HIGH_THRESHOLD  # noqa: F401
 
         # Craft a claim with moderate overlap (between LOW and HIGH threshold)
         chunk_text = "machine learning models use data training algorithms"

@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Generator
 
 from app.core.config import settings
 from app.core.logging import get_logger
+from app.core.metrics import metrics, timed
 from app.generation.generator import get_generator
 from app.generation.prompts import DEFAULT_SYSTEM_PROMPT, format_context
 from app.retrieval.pipeline import HybridRetriever
@@ -131,10 +132,17 @@ def _persist_query_log(
 def _compute_cost(
     embedding_tokens: int, input_tokens: int, output_tokens: int
 ) -> float:
+    """Cost in USD using the active LLM provider's pricing for generation tokens
+    and the active embedding provider's pricing for embedding tokens."""
+    from app.providers.embeddings.factory import get_embedding_provider
+    from app.providers.factory import get_llm_provider
+
+    llm = get_llm_provider()
+    emb = get_embedding_provider()
     return (
-        embedding_tokens / 1_000_000 * settings.embedding_price_per_1m
-        + input_tokens / 1_000_000 * settings.generation_input_price_per_1m
-        + output_tokens / 1_000_000 * settings.generation_output_price_per_1m
+        embedding_tokens / 1_000_000 * emb.price_per_1m
+        + input_tokens / 1_000_000 * llm.input_price_per_1m
+        + output_tokens / 1_000_000 * llm.output_price_per_1m
     )
 
 
@@ -163,7 +171,8 @@ class RAGService:
         system_prompt, resolved_version = _resolve_system_prompt(db, req.prompt_version)
 
         # 2. Retrieve
-        chunks, trace, embedding_tokens = self._retriever.retrieve(db, req.question)
+        with timed("retrieval"):
+            chunks, trace, embedding_tokens = self._retriever.retrieve(db, req.question)
 
         # 3. Format context
         context_dicts = [
@@ -177,17 +186,19 @@ class RAGService:
         context = format_context(context_dicts)
 
         # 4. Generate
-        answer, input_tokens, output_tokens = self._generator.generate(
-            context=context,
-            question=req.question,
-            system_prompt=system_prompt,
-        )
+        with timed("generation"):
+            answer, input_tokens, output_tokens = self._generator.generate(
+                context=context,
+                question=req.question,
+                system_prompt=system_prompt,
+            )
 
         # 5. Extract citations
         citations = extract_citations(answer, chunks)
 
         # 6. Verify
-        verifications, citation_accuracy = verify(answer, citations)
+        with timed("verification"):
+            verifications, citation_accuracy = verify(answer, citations)
 
         # 7. Confidence
         retrieval_scores = [c.score for c in trace.rrf.results]
@@ -205,6 +216,7 @@ class RAGService:
         # 8. Cost + latency
         cost_usd = _compute_cost(embedding_tokens, input_tokens, output_tokens)
         latency_ms = int((time.perf_counter() - t_start) * 1000)
+        metrics.record("total", latency_ms)
 
         # Handle low-confidence + empty retrieval: keep the answer but it'll
         # be the "not enough info" extractive text already.

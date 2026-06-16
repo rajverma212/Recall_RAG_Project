@@ -43,17 +43,44 @@ class Settings(BaseSettings):
     qdrant_port: int = 6333
     qdrant_collection: str = "rag_chunks"
 
-    # ----- OpenAI / LLM -----
-    openai_api_key: str = Field(default="", description="OpenAI API key")
-    embedding_model: str = "text-embedding-3-small"
-    embedding_dim: int = 1536
-    generation_model: str = "gpt-4o-mini"
-    generation_temperature: float = 0.0
+    # ===== LLM provider abstraction =====
+    # Which generation/judge provider to use: anthropic | openai | local.
+    # `local` is a deterministic offline provider (no network/key) used as the
+    # automatic fallback when the selected provider has no API key configured.
+    llm_provider: Literal["anthropic", "openai", "local"] = "anthropic"
 
-    # Pricing (USD per 1M tokens) for cost tracking.
+    # ----- Anthropic (default) -----
+    anthropic_api_key: str = Field(default="", description="Anthropic API key")
+    # Current Sonnet 4.x id. Generation/verification/judging all run through this.
+    anthropic_model: str = "claude-sonnet-4-6"
+    # Optional separate (often larger) model for judging/scoring; blank = reuse above.
+    anthropic_judge_model: str = ""
+    # Adaptive thinking on judge/verify/score calls (reasoning tasks). Off by
+    # default to bound latency/cost on high-volume per-claim verification.
+    anthropic_use_thinking: bool = False
+    # Pricing (USD per 1M tokens) — Claude Sonnet 4.6.
+    anthropic_input_price_per_1m: float = 3.00
+    anthropic_output_price_per_1m: float = 15.00
+
+    # ----- OpenAI -----
+    openai_api_key: str = Field(default="", description="OpenAI API key")
+    openai_model: str = "gpt-4o-mini"
+    openai_input_price_per_1m: float = 0.15
+    openai_output_price_per_1m: float = 0.60
+
+    generation_temperature: float = 0.0
+    generation_max_tokens: int = 1024
+
+    # ===== Embedding provider abstraction =====
+    # openai | bge | voyage | local
+    embedding_provider: Literal["openai", "bge", "voyage", "local"] = "openai"
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dim: int = 1536  # must match the active embedding model's dimension
     embedding_price_per_1m: float = 0.02
-    generation_input_price_per_1m: float = 0.15
-    generation_output_price_per_1m: float = 0.60
+
+    bge_embedding_model: str = "BAAI/bge-small-en-v1.5"  # 384-dim if selected
+    voyage_api_key: str = Field(default="", description="Voyage AI API key")
+    voyage_embedding_model: str = "voyage-3"
 
     # ----- Chunking -----
     # Strategy: "fixed" | "recursive" | "semantic"

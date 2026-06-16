@@ -7,6 +7,9 @@ import { DocumentsPage } from './pages/DocumentsPage'
 import { EvaluationPage } from './pages/EvaluationPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { ExperimentsPage } from './pages/ExperimentsPage'
+import { HallucinationDashboardPage } from './pages/HallucinationDashboardPage'
+import { PromptRegistryPage } from './pages/PromptRegistryPage'
+import { SystemStatusPage } from './pages/SystemStatusPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +34,9 @@ export function App() {
               <Route path="/evaluations" element={<EvaluationPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/experiments" element={<ExperimentsPage />} />
+              <Route path="/hallucination" element={<HallucinationDashboardPage />} />
+              <Route path="/prompts" element={<PromptRegistryPage />} />
+              <Route path="/system" element={<SystemStatusPage />} />
             </Routes>
           </main>
         </div>

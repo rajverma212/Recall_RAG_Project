@@ -13,8 +13,10 @@ psycopg[binary]==3.2.3
 qdrant-client==1.12.1
 
 # ----- LLM / embeddings -----
+anthropic==0.69.0
 openai==1.59.6
 tiktoken==0.8.0
+# voyageai==0.3.2  # optional: enable for EMBEDDING_PROVIDER=voyage
 
 # ----- Retrieval -----
 rank-bm25==0.2.2
