@@ -1,7 +1,7 @@
 # Session Checkpoint — Production Hardening Pass
 
 **Created:** 2026-06-16  
-**Branch:** `production-hardening` (1 commit ahead of `origin/production-hardening`)  
+**Branch:** `production-hardening` (local commits not yet pushed — run `git status`)  
 **Last commit:** `c9e96ed` — `feat: decouple LLM/embeddings behind providers and add observability`  
 **Status:** All session work is **committed**. Push to remote when ready (`git push`).
 
@@ -267,4 +267,4 @@ docs/CASE_STUDY.md
 | Files added (untracked) | 22 |
 | Net diff (tracked files) | +248 / −359 lines (refactor = deletion-heavy) |
 | Tests | 85 passed, 0 failed |
-| Branch divergence from origin | 1 commit ahead (unpushed) |
+| Branch divergence from origin | Unpushed local commits (see `git status`) |
