@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Acme DataStream Product Roadmap 2026</title>
+</head>
+<body>
+
+<h1>Acme DataStream Product Roadmap — 2026</h1>
+<p><strong>Confidential — Internal Only (Tier 3)</strong></p>
+<p>Last updated: January 15, 2026 | Owner: Product Management</p>
+
+<hr/>
+
+<h2>Strategic Themes for 2026</h2>
+<ol>
+  <li><strong>Real-Time Intelligence</strong>: Move from data delivery to actionable insights at the edge.</li>
+  <li><strong>Enterprise Compliance</strong>: SOC 2 Type II re-certification, HIPAA readiness, and EU Data Residency.</li>
+  <li><strong>Developer Experience</strong>: Cut time-to-first-event from 45 minutes to under 5 minutes.</li>
+  <li><strong>Platform Extensibility</strong>: Open connector marketplace and transformation SDK.</li>
+</ol>
+
+<h2>Q1 2026 (January – March)</h2>
+
+<h3>GA Releases</h3>
+<ul>
+  <li><strong>Stream Schemas v2</strong>: JSON Schema validation for all stream records. Backward-compatible with v1 streams.</li>
+  <li><strong>Multi-Region Active-Active</strong>: Streams replicated across US-East and EU-West with &lt; 100ms cross-region lag.</li>
+  <li><strong>Connector: Salesforce CRM</strong>: Change-data-capture for Salesforce objects. Available on Pro and Enterprise tiers.</li>
+</ul>
+
+<h3>Beta Releases</h3>
+<ul>
+  <li><strong>Acme AI Anomaly Detection</strong>: ML-based anomaly alerts on stream metrics. Beta opt-in for Enterprise customers.</li>
+</ul>
+
+<h3>Deprecations</h3>
+<ul>
+  <li><strong>API v1</strong>: Officially deprecated Q1 2026. End-of-life: December 31, 2026. Migration guide: docs.acmecorp.example.com/migrate-v1-v2.</li>
+  <li><strong>HTTP/1.1 for record publishing</strong>: HTTP/2 only from Q1 2026. Clients using HTTP/1.1 will receive a deprecation header.</li>
+</ul>
+
+<h2>Q2 2026 (April – June)</h2>
+
+<h3>Planned GA</h3>
+<ul>
+  <li><strong>HIPAA Business Associate Agreement (BAA)</strong>: Healthcare customers can process PHI on Acme DataStream once BAA is signed. Available on Enterprise only.</li>
+  <li><strong>EU Data Residency</strong>: Customer data never leaves the EU-West region when the EU Residency flag is set on the organization.</li>
+  <li><strong>Connector Marketplace (v1)</strong>: Third-party developers can publish connectors. Initial launch with 5 certified partners.</li>
+  <li><strong>CLI v2</strong>: Acme CLI rewritten in Go. 10× faster cold start. Supports all API v2 operations.</li>
+</ul>
+
+<h3>Planned Beta</h3>
+<ul>
+  <li><strong>Stream Joins</strong>: Join two streams on a key within a time window. SQL-like syntax. Beta with design partners.</li>
+  <li><strong>Transformation SDK (Python)</strong>: Write custom transformations in Python with local testing support.</li>
+</ul>
+
+<h2>Q3 2026 (July – September)</h2>
+
+<h3>Planned GA</h3>
+<ul>
+  <li><strong>Stream Joins GA</strong>: Exit beta; available on Pro and Enterprise.</li>
+  <li><strong>SOC 2 Type II Renewal</strong>: Annual audit scheduled for August 2026. Report available to Enterprise customers under NDA.</li>
+  <li><strong>Real-Time Dashboard Builder</strong>: Drag-and-drop dashboards powered by stream data. No-code, embeddable.</li>
+  <li><strong>Acme AI Anomaly Detection GA</strong>: Production-ready after Q1 beta feedback. Available on Pro and Enterprise.</li>
+</ul>
+
+<h3>Planned Beta</h3>
+<ul>
+  <li><strong>Acme DataSync</strong>: Bi-directional sync between two Acme streams with exactly-once delivery semantics.</li>
+  <li><strong>GraphQL API</strong>: GraphQL endpoint alongside existing REST API. Read-only initially.</li>
+</ul>
+
+<h2>Q4 2026 (October – December)</h2>
+
+<h3>Planned GA</h3>
+<ul>
+  <li><strong>GraphQL API GA</strong>: Full read-write GraphQL support.</li>
+  <li><strong>Transformation SDK GA</strong>: Python and TypeScript SDKs with operator certification program.</li>
+  <li><strong>Free Tier Expansion</strong>: Increase Free Tier record limit from 1M to 5M/month to accelerate bottom-up adoption.</li>
+</ul>
+
+<h3>Research / Exploratory</h3>
+<ul>
+  <li><strong>Edge Streaming Nodes</strong>: Run lightweight ingest nodes at the edge (Cloudflare Workers). Feasibility study ongoing.</li>
+  <li><strong>Acme DataLake Integration</strong>: Native export to Apache Iceberg format in customer-owned S3 buckets.</li>
+</ul>
+
+<h2>Pricing Changes in 2026</h2>
+<table border="1" cellpadding="6">
+  <tr><th>Change</th><th>Effective Date</th><th>Details</th></tr>
+  <tr><td>Pro Tier price increase</td><td>April 1, 2026</td><td>From $299/month to $349/month. Existing customers grandfathered until July 1, 2026.</td></tr>
+  <tr><td>Enterprise connector add-on</td><td>Q2 2026</td><td>$50/month per additional connector beyond the 10 included.</td></tr>
+  <tr><td>EU Data Residency premium</td><td>Q2 2026</td><td>20% premium on base subscription for EU-resident accounts.</td></tr>
+  <tr><td>Free Tier record limit increase</td><td>Q4 2026</td><td>1M → 5M records/month.</td></tr>
+</table>
+
+<h2>Key Success Metrics for 2026</h2>
+<ul>
+  <li>Grow Enterprise ARR by <strong>40%</strong> year-over-year.</li>
+  <li>Achieve <strong>NPS of 55+</strong> by Q4 (current: 48).</li>
+  <li>Time-to-first-event: reduce from <strong>45 minutes to 5 minutes</strong>.</li>
+  <li>Connector Marketplace: <strong>20 certified connectors</strong> by EOY.</li>
+  <li>Developer signups: <strong>50,000 new developer accounts</strong> in 2026.</li>
+</ul>
+
+<h2>Dependencies and Risks</h2>
+<ul>
+  <li><strong>Multi-Region</strong>: Dependent on AWS EU-West capacity allocation. Potential delay if AWS TLA capacity is constrained.</li>
+  <li><strong>HIPAA BAA</strong>: Legal review may take 6–8 weeks longer than planned. Q2 GA could slip to Q3.</li>
+  <li><strong>Stream Joins</strong>: Core engine rewrite required. Engineering estimates carry 30% uncertainty.</li>
+</ul>
+
+<hr/>
+<p><em>Roadmap items marked "Planned" are subject to change. GA dates are targets, not commitments. Do not share externally without PM approval.</em></p>
+
+</body>
+</html>
