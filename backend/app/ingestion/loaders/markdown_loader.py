@@ -33,7 +33,6 @@ class MarkdownLoader(BaseLoader):
         sections: list[LoadedSection] = []
         # Track the current heading hierarchy: level -> title
         heading_stack: dict[int, str] = {}
-        current_heading_level: int | None = None
         current_title: str | None = None
         buffer: list[str] = []
         ordinal = 0
@@ -82,7 +81,6 @@ class MarkdownLoader(BaseLoader):
                     if lvl >= level:
                         del heading_stack[lvl]
                 heading_stack[level] = heading_text
-                current_heading_level = level
                 current_title = heading_text
             else:
                 # Collect rendered text from non-heading tokens

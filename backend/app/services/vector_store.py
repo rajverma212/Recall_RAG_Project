@@ -105,6 +105,27 @@ class VectorStore:
             VectorHit(h.payload.get("chunk_id"), h.score, h.payload) for h in hits
         ]
 
+    def collection_dim(self) -> int | None:
+        """Vector size of the live Qdrant collection, or None if not applicable.
+
+        Returns None when running on the in-memory fallback or when the
+        collection does not yet exist — callers treat None as "nothing to
+        validate against". Used by the startup embedding-dimension guardrail.
+        """
+        if self._client is None:
+            return None
+        try:
+            info = self._client.get_collection(settings.qdrant_collection)
+            params = info.config.params.vectors
+            # Single unnamed vector config exposes `.size`; named configs are a dict.
+            if hasattr(params, "size"):
+                return int(params.size)
+            if isinstance(params, dict) and params:
+                return int(next(iter(params.values())).size)
+        except Exception as exc:
+            logger.warning(f"Could not read Qdrant collection dim: {exc}")
+        return None
+
     def delete_document(self, document_id: str) -> None:
         if self._client is None:
             self._mem.delete_document(document_id)

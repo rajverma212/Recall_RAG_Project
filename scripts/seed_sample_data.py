@@ -159,7 +159,7 @@ def _seed_offline(files: list, results: dict) -> dict:
 
 
 def main() -> None:
-    print(f"\n=== Acme Corp Sample Data Seeder ===")
+    print("\n=== Acme Corp Sample Data Seeder ===")
     print(f"Corpus directory: {_SAMPLE_DATA_DIR}\n")
 
     # Try to get a DB session

@@ -1,7 +1,7 @@
 """Fixed-size token-window chunker with overlap."""
 from __future__ import annotations
 
-from app.chunking.base import BaseChunker, ChunkPiece, _count_tokens
+from app.chunking.base import BaseChunker, ChunkPiece
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.ingestion.loaders.base import LoadedSection

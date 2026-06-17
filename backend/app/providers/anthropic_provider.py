@@ -57,8 +57,11 @@ class AnthropicProvider(BaseLLMProvider):
             "messages": [{"role": "user", "content": prompt}],
         }
         if settings.anthropic_use_thinking:
-            kwargs["thinking"] = {"type": "adaptive"}
-            kwargs["max_tokens"] = max(max_tokens, 2048)
+            # Extended thinking: the Messages API expects an explicit token
+            # budget. `max_tokens` must exceed `budget_tokens`, so bump both.
+            budget = 1024
+            kwargs["thinking"] = {"type": "enabled", "budget_tokens": budget}
+            kwargs["max_tokens"] = max(max_tokens, budget + 512)
         resp = self._client.messages.create(**kwargs)
         return self._text_of(resp)
 

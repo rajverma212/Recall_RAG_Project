@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
+from app.core.startup import StartupValidationError, run_startup_checks
 from app.db.init_db import init_db
 
 logger = get_logger(__name__)
@@ -21,6 +22,13 @@ async def lifespan(app: FastAPI):
         init_db()
     except Exception as exc:  # pragma: no cover
         logger.warning(f"init_db skipped: {exc}")
+
+    # Provider + embedding-dimension validation. Fatal misconfiguration aborts
+    # boot in production; local/CI degrade gracefully (see app.core.startup).
+    report = run_startup_checks()
+    if not report.ok:
+        raise StartupValidationError("; ".join(report.errors))
+
     logger.info(f"{settings.app_name} started ({settings.environment})")
     yield
 

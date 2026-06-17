@@ -93,7 +93,7 @@ def run_single(args: argparse.Namespace) -> dict:
         print(f"  Citation Accuracy  : {agg.get('citation_accuracy', 0):.3f}")
         print(f"  Conf Calibration   : {agg.get('confidence_calibration', 0):.3f}")
         print(f"  Pass Rate          : {agg.get('pass_rate', 0):.3f}")
-        print(f"\n  Per-category breakdown:")
+        print("\n  Per-category breakdown:")
         for cat, cd in sorted(summary.get("per_category", {}).items()):
             print(
                 f"    {cat:<12}: recall={cd.get('retrieval_recall',0):.3f}  "

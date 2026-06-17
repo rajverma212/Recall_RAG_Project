@@ -93,7 +93,6 @@ def _keyword_overlap(predicted: str, expected: str, must_include: list[str]) -> 
     Returns float in [0.0, 1.0].
     """
     pred_lower = predicted.lower()
-    exp_lower = expected.lower()
 
     # --- Must-include coverage (60% weight) ---
     if must_include:
@@ -161,7 +160,7 @@ def answer_correctness(
 
     # Optional: embedding similarity boost
     try:
-        from sentence_transformers import SentenceTransformer, util  # type: ignore
+        from sentence_transformers import util  # type: ignore
         _model = _get_sentence_model()
         if _model is not None:
             emb_pred = _model.encode(predicted, convert_to_tensor=True)

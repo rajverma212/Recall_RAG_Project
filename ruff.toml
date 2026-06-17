@@ -1,0 +1,13 @@
+# Conservative ruleset: real correctness errors only (pyflakes + syntax),
+# not stylistic opinions. Keeps CI signal high without churn on a portfolio repo.
+line-length = 100
+target-version = "py311"
+
+[lint]
+# F  = pyflakes (unused imports/vars, undefined names, f-string issues)
+# E9 = syntax/IO errors
+select = ["F", "E9"]
+
+[lint.per-file-ignores]
+# Tests intentionally import-inside-function and use fixtures/monkeypatch.
+"backend/tests/*" = ["F401", "F811"]

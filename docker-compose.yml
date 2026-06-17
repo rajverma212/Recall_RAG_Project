@@ -35,7 +35,20 @@ services:
     environment:
       POSTGRES_HOST: postgres
       QDRANT_HOST: qdrant
+      ENVIRONMENT: ${ENVIRONMENT:-local}
+      # LLM provider (default: anthropic). Forwarded so the configured provider
+      # can actually activate in-container — without these the backend silently
+      # falls back to the local deterministic provider.
+      LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      # Embedding provider (default in .env.example: openai; local needs no key).
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-1536}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
       CHUNKING_STRATEGY: ${CHUNKING_STRATEGY:-recursive}
       # So `python scripts/...` and `import app` resolve inside the container.
       PYTHONPATH: /app
