@@ -20,8 +20,15 @@ tiktoken==0.8.0
 
 # ----- Retrieval -----
 rank-bm25==0.2.2
+# Cross-encoder reranking (BAAI/bge-reranker-base) runs via sentence-transformers'
+# CrossEncoder — installs from prebuilt wheels, no compilation.
 sentence-transformers==3.3.1
-FlagEmbedding==1.3.3
+# NOTE: FlagEmbedding was removed. It pulled `ir-datasets` (an IR benchmark loader,
+# unused at inference) which transitively requires `zlib-state`, a C-extension that
+# fails to build without zlib headers (`zlib.h`) — breaking `docker compose build`.
+# The reranker loads the identical model through CrossEncoder instead. To opt back
+# into FlagReranker, `pip install FlagEmbedding` and add `zlib1g-dev` to the image;
+# the reranker auto-detects and prefers it when present.
 
 # ----- Ingestion / parsing -----
 pypdf==5.1.0

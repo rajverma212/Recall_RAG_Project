@@ -1,14 +1,19 @@
-"""Cross-encoder reranker with three-tier fallback:
+"""Cross-encoder reranker with a three-tier backend:
 
-1. FlagEmbedding FlagReranker (BAAI/bge-reranker-base) — preferred
-2. sentence-transformers CrossEncoder               — second choice
-3. Lexical overlap (Jaccard on word sets)           — offline / CI fallback
+1. sentence-transformers CrossEncoder (BAAI/bge-reranker-base) — shipped default
+2. FlagEmbedding FlagReranker (same model)  — optional, used only if installed
+3. Lexical overlap (Jaccard on word sets)   — offline / CI fallback
 
-The model is lazy-loaded once on first use (module singleton).
-Scores are normalised to [0, 1] via sigmoid.
+CrossEncoder is the default because it loads the identical cross-encoder model
+from prebuilt wheels with no native build step. FlagReranker is heavier (it pulls
+`ir-datasets`/`zlib-state`, which need C build tooling) so it is *not* a hard
+dependency; if the package is present it is preferred (fp16 on GPU), otherwise it
+is skipped silently. The model is lazy-loaded once on first use (module
+singleton). Scores are normalised to [0, 1] via sigmoid.
 """
 from __future__ import annotations
 
+import importlib.util
 import math
 import re
 import time
@@ -99,15 +104,17 @@ def _get_backend() -> _Backend:
     model = settings.reranker_model
     device = settings.reranker_device
 
-    # 1. Try FlagEmbedding
-    try:
-        _backend = _FlagRerankerBackend(model, device)
-        _backend_name = "FlagReranker"
-        return _backend
-    except Exception as exc:
-        logger.warning(f"FlagReranker unavailable ({exc}), trying CrossEncoder")
+    # 1. Prefer FlagReranker only if the optional package is actually installed
+    #    (avoids a noisy import error on the default, FlagEmbedding-free image).
+    if importlib.util.find_spec("FlagEmbedding") is not None:
+        try:
+            _backend = _FlagRerankerBackend(model, device)
+            _backend_name = "FlagReranker"
+            return _backend
+        except Exception as exc:
+            logger.warning(f"FlagReranker present but failed to load ({exc})")
 
-    # 2. Try sentence-transformers CrossEncoder
+    # 2. sentence-transformers CrossEncoder — shipped default
     try:
         _backend = _CrossEncoderBackend(model, device)
         _backend_name = "CrossEncoder"
