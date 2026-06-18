@@ -65,9 +65,18 @@ class VectorStore:
             from qdrant_client import QdrantClient
             from qdrant_client.models import Distance, VectorParams
 
-            self._client = QdrantClient(
-                host=settings.qdrant_host, port=settings.qdrant_port, timeout=5
-            )
+            if settings.qdrant_url:
+                # Managed Qdrant Cloud: TLS URL + API key.
+                self._client = QdrantClient(
+                    url=settings.qdrant_url,
+                    api_key=settings.qdrant_api_key or None,
+                    timeout=5,
+                )
+            else:
+                # Local / Docker: plain host:port.
+                self._client = QdrantClient(
+                    host=settings.qdrant_host, port=settings.qdrant_port, timeout=5
+                )
             existing = {c.name for c in self._client.get_collections().collections}
             if settings.qdrant_collection not in existing:
                 self._client.create_collection(

@@ -83,7 +83,7 @@ def main() -> int:
 
     print("-" * 60)
     if failures:
-        print(f"\n❌ EVAL GATE FAILED:\n  - " + "\n  - ".join(failures))
+        print("\n❌ EVAL GATE FAILED:\n  - " + "\n  - ".join(failures))
         return 1
     print("\n✅ EVAL GATE PASSED — all metrics at or above their floors.")
     return 0

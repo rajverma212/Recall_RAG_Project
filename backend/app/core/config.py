@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     qdrant_host: str = "qdrant"
     qdrant_port: int = 6333
     qdrant_collection: str = "rag_chunks"
+    # Managed Qdrant Cloud: set QDRANT_URL (https://...:6333) + QDRANT_API_KEY to
+    # connect over TLS with auth. When QDRANT_URL is set it takes precedence over
+    # host/port (used for local Docker). See docs/DEPLOYMENT_GUIDE.md.
+    qdrant_url: str = ""
+    qdrant_api_key: str = ""
 
     # ===== LLM provider abstraction =====
     # Which generation/judge provider to use: anthropic | openai | local.

@@ -9,5 +9,6 @@ target-version = "py311"
 select = ["F", "E9"]
 
 [lint.per-file-ignores]
-# Tests intentionally import-inside-function and use fixtures/monkeypatch.
-"backend/tests/*" = ["F401", "F811"]
+# Tests intentionally import-inside-function, reuse fixtures, and sometimes
+# bind a call result for readability without asserting on it.
+"backend/tests/*" = ["F401", "F811", "F841"]
