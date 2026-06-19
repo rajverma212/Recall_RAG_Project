@@ -62,7 +62,7 @@ export function AnalyticsPage() {
           />
           <MetricCard
             label="Avg Confidence"
-            value={`${(data.avg_confidence * 100).toFixed(1)}%`}
+            value={`${data.avg_confidence.toFixed(1)}%`}
           />
           <MetricCard
             label="Avg Citation Acc."

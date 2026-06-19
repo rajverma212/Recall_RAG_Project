@@ -145,7 +145,13 @@ export function RetrievalInspectorPage() {
         </form>
       </div>
 
-      {!trace && !askMutation.isPending && (
+      {askMutation.error && (
+        <div className="mx-6 mt-4 rounded-xl border border-danger-400/30 bg-danger-900/30 px-4 py-3 text-sm text-danger-400">
+          {(askMutation.error as Error).message}
+        </div>
+      )}
+
+      {!trace && !askMutation.isPending && !askMutation.error && (
         <EmptyState
           icon={<Search size={28} />}
           title="No trace yet"

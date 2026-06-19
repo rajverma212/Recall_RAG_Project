@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     # ----- App -----
     app_name: str = "Hybrid RAG Platform"
+    app_version: str = "1.0.0"
     environment: Literal["local", "ci", "production"] = "local"
     log_level: str = "INFO"
     api_v1_prefix: str = "/v1"

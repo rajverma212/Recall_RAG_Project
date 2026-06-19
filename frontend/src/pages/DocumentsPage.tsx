@@ -186,8 +186,13 @@ export function DocumentsPage() {
                       <td className="px-4 py-3 tabular-nums text-xs text-slate-500">
                         {doc.num_pages ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-500">
-                        {new Date(doc.ingested_at).toLocaleDateString()}
+                      <td className="px-4 py-3 text-xs text-slate-500" title={new Date(doc.ingested_at).toLocaleString()}>
+                        {new Date(doc.ingested_at).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button

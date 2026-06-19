@@ -191,8 +191,14 @@ export interface PromptVersion {
 
 // ─── Providers ───────────────────────────────────────────────────────────────
 
+export interface ProviderStatus {
+  healthy: boolean
+  state: 'active' | 'fallback'
+  detail: string
+}
+
 export interface LLMProviderInfo {
-  configured: boolean
+  configured: string // the configured provider name (e.g. "anthropic")
   active: string
   model: string
   input_price_per_1m: number
@@ -202,14 +208,17 @@ export interface LLMProviderInfo {
     anthropic: boolean
     openai: boolean
   }
+  status: ProviderStatus
 }
 
 export interface EmbeddingProviderInfo {
-  configured: boolean
+  configured: string
   active: string
   model: string
   dim: number
   available: string[]
+  keys_present?: Record<string, boolean>
+  status: ProviderStatus
 }
 
 export interface ProvidersResponse {
@@ -219,14 +228,27 @@ export interface ProvidersResponse {
 
 // ─── Health ──────────────────────────────────────────────────────────────────
 
+export interface HealthCheck {
+  ok: boolean
+  detail?: string
+  // vector_store
+  backend?: string
+  collection?: string
+  vectors?: number | null
+  // llm_provider
+  configured?: string
+  active?: string
+  model?: string
+  // retrieval
+  embedding_provider?: string
+}
+
 export interface HealthResponse {
   status: string
   app: string
+  version?: string
   environment: string
-  dependencies: {
-    postgres: boolean
-    qdrant: boolean
-  }
+  checks: Record<string, HealthCheck>
 }
 
 // ─── Metrics ─────────────────────────────────────────────────────────────────
@@ -245,6 +267,8 @@ export interface MetricsResponse {
   queries: {
     total_queries: number
     avg_latency_ms: number
+    success_rate?: number
+    citation_accuracy?: number
     avg_confidence: number
     low_confidence_rate: number
   }

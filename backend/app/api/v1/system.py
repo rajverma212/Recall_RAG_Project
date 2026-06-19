@@ -41,7 +41,12 @@ def health(response: Response, db: Session = Depends(get_db)) -> dict:
 
         vs = get_vector_store()
         backend = "qdrant" if vs._client is not None else "in_memory"
-        checks["vector_store"] = {"ok": True, "backend": backend}
+        checks["vector_store"] = {
+            "ok": True,
+            "backend": backend,
+            "collection": settings.qdrant_collection,
+            "vectors": vs.count(),
+        }
     except Exception as exc:
         checks["vector_store"] = {"ok": False, "detail": str(exc)[:200]}
 
@@ -82,6 +87,7 @@ def health(response: Response, db: Session = Depends(get_db)) -> dict:
     return {
         "status": "ok" if overall_ok else "degraded",
         "app": settings.app_name,
+        "version": settings.app_version,
         "environment": settings.environment,
         "checks": checks,
     }

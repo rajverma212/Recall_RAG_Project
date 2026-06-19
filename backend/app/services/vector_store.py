@@ -114,6 +114,22 @@ class VectorStore:
             VectorHit(h.payload.get("chunk_id"), h.score, h.payload) for h in hits
         ]
 
+    def count(self) -> int | None:
+        """Number of indexed vectors (points) in the collection, or None.
+
+        Surfaced on ``/v1/health`` so the System dashboard can show how many
+        chunks are indexed. Falls back to the in-memory store's size offline.
+        """
+        if self._client is None:
+            return self._mem.count()
+        try:
+            return int(
+                self._client.count(settings.qdrant_collection, exact=True).count
+            )
+        except Exception as exc:
+            logger.warning(f"Could not count Qdrant points: {exc}")
+            return None
+
     def collection_dim(self) -> int | None:
         """Vector size of the live Qdrant collection, or None if not applicable.
 

@@ -9,6 +9,16 @@ import { Spinner } from '../components/Spinner'
 import { EmptyState } from '../components/EmptyState'
 import type { AskResponse } from '../lib/types'
 
+// Demo-mode starter prompts. Click to populate the question box — useful for
+// walkthroughs and screenshots when the corpus content is unknown to a viewer.
+const SAMPLE_QUESTIONS = [
+  'What is software engineering?',
+  'What are the four process activities?',
+  'What is the difference between software engineering and computer science?',
+  'Summarize this document.',
+  'What skills are listed in this resume?',
+]
+
 export function AskPage() {
   const [question, setQuestion] = useState('')
   const [streaming, setStreaming] = useState(true)
@@ -100,6 +110,28 @@ export function AskPage() {
             </button>
           </div>
         </form>
+
+        {/* Sample questions (demo mode) — shown before the first answer */}
+        {!response && !streamingText && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Sample questions
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SAMPLE_QUESTIONS.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => setQuestion(q)}
+                  disabled={isLoading}
+                  className="rounded-full border border-slate-700/60 bg-surface-850 px-3 py-1.5 text-xs text-slate-400 transition-colors hover:border-accent-500/50 hover:text-accent-300 disabled:opacity-50"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Streaming tokens (while loading) */}
         {streamingText && !response && (

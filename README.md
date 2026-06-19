@@ -121,15 +121,22 @@ docker compose exec backend python scripts/run_evaluation.py --compare   # fixed
 
 ## Screenshots
 
-> _Placeholders — capture from a running instance (`docker compose up`) and drop into `docs/screenshots/`._
+> Images render once captured into [`docs/screenshots/`](docs/screenshots/) — see the [capture guide](docs/screenshots/README.md). The app is fully runnable now (`docker compose up`); these are placeholders until images are saved.
 
-| View | Placeholder |
-|---|---|
-| Ask + citations + confidence | `![Ask](docs/screenshots/ask.png)` _(pending)_ |
-| Retrieval Inspector (stage scores) | `![Retrieval Inspector](docs/screenshots/retrieval.png)` _(pending)_ |
-| Hallucination Dashboard (heatmap) | `![Hallucination](docs/screenshots/hallucination.png)` _(pending)_ |
-| Analytics Dashboard | `![Analytics](docs/screenshots/analytics.png)` _(pending)_ |
-| System Status (providers/health) | `![System](docs/screenshots/system.png)` _(pending)_ |
+### Ask — grounded answer with inline citations & confidence
+![Ask page](docs/screenshots/ask.png)
+
+### Retrieval Inspector — dense / BM25 / RRF / reranked, side by side
+![Retrieval Inspector](docs/screenshots/retrieval.png)
+
+### Hallucination Dashboard — per-claim verification & trust heatmap
+![Hallucination Dashboard](docs/screenshots/hallucination.png)
+
+### Analytics Dashboard — volume, confidence, latency, cost
+![Analytics Dashboard](docs/screenshots/analytics.png)
+
+### System Status — live service health & active providers
+![System Status](docs/screenshots/system.png)
 
 ---
 
