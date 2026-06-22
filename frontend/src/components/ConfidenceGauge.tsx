@@ -12,7 +12,9 @@ function ringColor(score: number): { ring: string; text: string; glow: string } 
 }
 
 export function ConfidenceGauge({ confidence }: ConfidenceGaugeProps) {
-  const score = Math.round(confidence.score * 100)
+  // Backend `confidence.score` is already on a 0–100 scale (see
+  // compute_confidence: `score = 100 * weighted_sum`). Do NOT multiply again.
+  const score = Math.round(confidence.score)
   const { ring, text, glow } = ringColor(score)
 
   // SVG ring
