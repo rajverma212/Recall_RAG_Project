@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AskProvider } from './context/AskContext'
 import { Sidebar } from './components/Sidebar'
 import { AskPage } from './pages/AskPage'
 import { RetrievalInspectorPage } from './pages/RetrievalInspectorPage'
@@ -23,24 +24,26 @@ const queryClient = new QueryClient({
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <div className="flex h-screen overflow-hidden bg-surface-900 text-slate-100">
-          <Sidebar />
-          <main className="flex-1 overflow-hidden">
-            <Routes>
-              <Route path="/" element={<AskPage />} />
-              <Route path="/retrieval" element={<RetrievalInspectorPage />} />
-              <Route path="/documents" element={<DocumentsPage />} />
-              <Route path="/evaluations" element={<EvaluationPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
-              <Route path="/experiments" element={<ExperimentsPage />} />
-              <Route path="/hallucination" element={<HallucinationDashboardPage />} />
-              <Route path="/prompts" element={<PromptRegistryPage />} />
-              <Route path="/system" element={<SystemStatusPage />} />
-            </Routes>
-          </main>
-        </div>
-      </BrowserRouter>
+      <AskProvider>
+        <BrowserRouter>
+          <div className="flex h-screen overflow-hidden bg-surface-900 text-slate-100">
+            <Sidebar />
+            <main className="flex-1 overflow-hidden">
+              <Routes>
+                <Route path="/" element={<AskPage />} />
+                <Route path="/retrieval" element={<RetrievalInspectorPage />} />
+                <Route path="/documents" element={<DocumentsPage />} />
+                <Route path="/evaluations" element={<EvaluationPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/experiments" element={<ExperimentsPage />} />
+                <Route path="/hallucination" element={<HallucinationDashboardPage />} />
+                <Route path="/prompts" element={<PromptRegistryPage />} />
+                <Route path="/system" element={<SystemStatusPage />} />
+              </Routes>
+            </main>
+          </div>
+        </BrowserRouter>
+      </AskProvider>
     </QueryClientProvider>
   )
 }

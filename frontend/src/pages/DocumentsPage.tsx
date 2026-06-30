@@ -1,12 +1,28 @@
 import { useCallback, useState } from 'react'
-import { Upload, Trash2, FileText, ChevronDown } from 'lucide-react'
 import { useDocuments, useIngest, useDeleteDocument } from '../hooks'
-import { StatusBadge } from '../components/StatusBadge'
 import { Spinner } from '../components/Spinner'
 import { EmptyState } from '../components/EmptyState'
-import type { ChunkingStrategy } from '../lib/types'
+import type { ChunkingStrategy, Document } from '../lib/types'
 
 const STRATEGIES: ChunkingStrategy[] = ['fixed', 'recursive', 'semantic']
+
+// Document corpus states render as an amber "active" pill in the Ember system
+// (ready/completed → amber), with processing/error keeping warn/danger tints.
+function DocStatus({ status }: { status: string }) {
+  const isReady = status === 'ready' || status === 'completed'
+  const cls = isReady
+    ? 'bg-accent-500/10 text-accent-500'
+    : status === 'processing'
+      ? 'bg-warning-400/10 text-warning-400'
+      : status === 'error'
+        ? 'bg-danger-400/10 text-danger-400'
+        : 'bg-surface-200 text-slate-400'
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${cls}`}>
+      {isReady ? 'completed' : status}
+    </span>
+  )
+}
 
 function DropZone({
   onFiles,
@@ -35,18 +51,22 @@ function DropZone({
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
-      className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed py-10 px-6 text-center transition-colors ${
+      className={`relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[14px] border-[1.5px] border-dashed px-6 py-9 text-center transition-colors ${
         dragging
-          ? 'border-accent-500 bg-accent-500/10'
-          : 'border-slate-700/60 hover:border-slate-600 hover:bg-surface-800/40'
+          ? 'border-accent-500 bg-accent-500/[0.06]'
+          : 'border-[#38342e] bg-surface-800 hover:border-accent-500/50'
       } ${disabled ? 'pointer-events-none opacity-50' : ''}`}
     >
-      <Upload size={24} className="mb-3 text-slate-500" />
-      <p className="text-sm font-medium text-slate-300">
-        Drag & drop files here, or{' '}
-        <span className="text-accent-400">click to browse</span>
+      {/* Subtle shimmer sweep */}
+      <span className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 animate-shimmer bg-gradient-to-r from-transparent via-white/[0.02] to-transparent" />
+      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-[12px] bg-accent-500/10 text-[18px] text-accent-500">
+        ↑
+      </div>
+      <p className="text-[14px] font-semibold text-slate-100">Drag &amp; drop files here</p>
+      <p className="mt-1 text-[13px] text-slate-400">
+        or <span className="text-accent-500 underline">click to browse</span> — PDF, TXT, DOCX
+        supported
       </p>
-      <p className="mt-1 text-xs text-slate-500">PDF, TXT, DOCX supported</p>
       <input
         type="file"
         multiple
@@ -78,139 +98,147 @@ export function DocumentsPage() {
   )
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-slate-700/50 px-6 py-4">
-        <h1 className="text-lg font-semibold text-slate-100">Documents</h1>
-        <p className="text-xs text-slate-500 mt-0.5">Manage your indexed document corpus</p>
+    <div className="h-full overflow-y-auto px-8 py-7">
+      {/* Top bar */}
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-slate-100">
+            Documents
+          </h1>
+          <p className="mt-0.5 text-[13px] text-slate-400">Manage your indexed document corpus</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-[13px] text-slate-400">Chunking strategy</label>
+          <div className="relative">
+            <select
+              value={strategy}
+              onChange={(e) => setStrategy(e.target.value as ChunkingStrategy)}
+              className="appearance-none rounded-[10px] border border-surface-200 bg-surface-800 py-2 pl-3.5 pr-8 text-[13px] font-medium text-slate-100 outline-none focus:border-accent-500/60"
+            >
+              {STRATEGIES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-accent-500">
+              ▾
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-        {/* Upload area */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <label className="text-xs font-medium text-slate-400">Chunking strategy</label>
-            <div className="relative">
-              <select
-                value={strategy}
-                onChange={(e) => setStrategy(e.target.value as ChunkingStrategy)}
-                className="appearance-none rounded-lg border border-slate-700/60 bg-surface-850 py-1.5 pl-3 pr-7 text-xs text-slate-300 outline-none focus:border-accent-500/60"
-              >
-                {STRATEGIES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
+      {/* Upload area */}
+      <DropZone onFiles={handleFiles} disabled={ingest.isPending} />
+      {ingest.isPending && (
+        <div className="mt-3 flex items-center gap-2 text-[13px] text-slate-400">
+          <Spinner size="sm" /> Uploading and ingesting...
+        </div>
+      )}
+      {ingest.data && (
+        <div className="mt-3 rounded-[10px] border border-success-400/30 bg-success-900/20 px-3.5 py-2.5 text-[12px] text-success-400">
+          Ingested <strong>{ingest.data.filename}</strong> — {ingest.data.num_chunks} chunks
+          {ingest.data.num_duplicates_skipped > 0 &&
+            `, ${ingest.data.num_duplicates_skipped} duplicates skipped`}
+        </div>
+      )}
+      {ingest.error && (
+        <div className="mt-3 rounded-[10px] border border-danger-400/30 bg-danger-900/20 px-3.5 py-2.5 text-[12px] text-danger-400">
+          {ingest.error.message}
+        </div>
+      )}
+
+      {/* Documents table */}
+      <div className="mt-6 rounded-[14px] border border-surface-200 bg-surface-800">
+        <div className="flex items-center gap-2 px-5 py-4">
+          <h2 className="section-label">Indexed Documents</h2>
+          {docs && (
+            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent-500/10 px-1.5 text-[11px] font-semibold text-accent-500">
+              {docs.length}
+            </span>
+          )}
+        </div>
+
+        {isLoading && (
+          <div className="flex justify-center py-10">
+            <Spinner />
+          </div>
+        )}
+        {error && <p className="px-5 pb-5 text-[13px] text-danger-400">{error.message}</p>}
+        {docs && docs.length === 0 && (
+          <EmptyState
+            icon={<span className="font-serif text-[34px] italic">▦</span>}
+            title="No documents yet"
+            description="Upload files above to begin indexing."
+          />
+        )}
+        {docs && docs.length > 0 && (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-surface-50">
+                {['Filename', 'Status', 'Chunks', 'Strategy', 'Pages', 'Ingested'].map((h) => (
+                  <th
+                    key={h}
+                    className="px-5 py-2.5 text-left text-[10px] font-medium uppercase tracking-label text-slate-600"
+                  >
+                    {h}
+                  </th>
                 ))}
-              </select>
-              <ChevronDown size={12} className="pointer-events-none absolute right-2 top-2 text-slate-500" />
-            </div>
-          </div>
-          <DropZone onFiles={handleFiles} disabled={ingest.isPending} />
-          {ingest.isPending && (
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <Spinner size="sm" /> Uploading and ingesting...
-            </div>
-          )}
-          {ingest.data && (
-            <div className="rounded-lg border border-success-400/30 bg-success-900/20 px-3 py-2 text-xs text-success-400">
-              Ingested <strong>{ingest.data.filename}</strong> — {ingest.data.num_chunks} chunks
-              {ingest.data.num_duplicates_skipped > 0 && `, ${ingest.data.num_duplicates_skipped} duplicates skipped`}
-            </div>
-          )}
-          {ingest.error && (
-            <div className="rounded-lg border border-danger-400/30 bg-danger-900/20 px-3 py-2 text-xs text-danger-400">
-              {ingest.error.message}
-            </div>
-          )}
-        </div>
-
-        {/* Documents table */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Indexed Documents
-              {docs && <span className="ml-1.5 text-slate-600">({docs.length})</span>}
-            </h2>
-          </div>
-
-          {isLoading && (
-            <div className="flex justify-center py-10">
-              <Spinner />
-            </div>
-          )}
-          {error && (
-            <p className="text-sm text-danger-400">{error.message}</p>
-          )}
-          {docs && docs.length === 0 && (
-            <EmptyState
-              icon={<FileText size={28} />}
-              title="No documents yet"
-              description="Upload files above to begin indexing."
-            />
-          )}
-          {docs && docs.length > 0 && (
-            <div className="overflow-hidden rounded-xl border border-slate-700/50">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-700/50 bg-surface-900">
-                    {['Filename', 'Status', 'Chunks', 'Strategy', 'Pages', 'Ingested'].map((h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-500"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                    <th className="px-4 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {docs.map((doc) => (
-                    <tr key={doc.id} className="hover:bg-surface-800/40 transition-colors">
-                      <td className="px-4 py-3 max-w-xs">
-                        <div className="flex items-center gap-2">
-                          <FileText size={13} className="flex-shrink-0 text-slate-500" />
-                          <span className="truncate text-slate-200 text-xs font-medium">
-                            {doc.title ?? doc.filename}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={doc.status} />
-                      </td>
-                      <td className="px-4 py-3 tabular-nums text-xs text-slate-400">
-                        {doc.num_chunks}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-500">
-                        {doc.chunking_strategy ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 tabular-nums text-xs text-slate-500">
-                        {doc.num_pages ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-500" title={new Date(doc.ingested_at).toLocaleString()}>
-                        {new Date(doc.ingested_at).toLocaleString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => deleteDoc.mutate(doc.id)}
-                          disabled={deleteDoc.isPending}
-                          className="rounded p-1 text-slate-600 hover:bg-danger-900/50 hover:text-danger-400 transition-colors"
-                          aria-label="Delete document"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                <th className="px-5 py-2.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {docs.map((doc: Document) => (
+                <tr
+                  key={doc.id}
+                  className="border-b border-surface-50 transition-colors last:border-0 hover:bg-surface-850"
+                >
+                  <td className="max-w-xs px-5 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="h-[18px] w-[14px] flex-shrink-0 rounded-[2px] border border-[#38342e] bg-surface-200" />
+                      <span className="truncate text-[13px] text-slate-100">
+                        {doc.title ?? doc.filename}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <DocStatus status={doc.status} />
+                  </td>
+                  <td className="px-5 py-3.5 text-[13px] tabular-nums text-slate-400">
+                    {doc.num_chunks}
+                  </td>
+                  <td className="px-5 py-3.5 text-[13px] text-slate-400">
+                    {doc.chunking_strategy ?? '—'}
+                  </td>
+                  <td className="px-5 py-3.5 text-[13px] tabular-nums text-slate-400">
+                    {doc.num_pages ?? '—'}
+                  </td>
+                  <td
+                    className="px-5 py-3.5 text-[13px] text-slate-600"
+                    title={new Date(doc.ingested_at).toLocaleString()}
+                  >
+                    {new Date(doc.ingested_at).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </td>
+                  <td className="px-5 py-3.5 text-right">
+                    <button
+                      onClick={() => deleteDoc.mutate(doc.id)}
+                      disabled={deleteDoc.isPending}
+                      className="text-[16px] leading-none text-slate-500 transition-colors hover:text-danger-400"
+                      aria-label="Delete document"
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

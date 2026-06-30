@@ -9,9 +9,9 @@ interface HeatmapProps {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  supported: 'bg-success-500/15 border-b border-success-500/40',
-  partially_supported: 'bg-warning-400/15 border-b border-warning-400/40',
-  unsupported: 'bg-danger-500/20 border-b border-danger-500/40',
+  supported: 'bg-success-400/10 text-slate-100 font-medium',
+  partially_supported: 'bg-warning-400/10 text-slate-100',
+  unsupported: 'bg-danger-400/10 text-slate-100',
 }
 
 /**
@@ -46,12 +46,12 @@ export function Heatmap({ answer, verifications, onCitationClick, activeMarker }
   const sentences = splitSentences(answer)
 
   return (
-    <div className="space-y-1 leading-relaxed text-sm text-slate-300">
+    <div className="answer-text">
       {sentences.map((sentence, i) => {
         const match = matchSentence(sentence, verifications)
         const cls = match ? STATUS_STYLE[match.status] ?? '' : ''
         return (
-          <span key={i} className={`inline ${cls} rounded-sm px-0.5`}>
+          <span key={i} className={`${cls} rounded px-0.5 py-0.5`}>
             {sentence}
             {match &&
               match.cited_markers.map((m) => (

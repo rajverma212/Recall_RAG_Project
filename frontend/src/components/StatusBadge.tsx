@@ -1,12 +1,12 @@
 type Status = 'ready' | 'processing' | 'error' | 'supported' | 'partially_supported' | 'unsupported' | string
 
 const MAP: Record<string, string> = {
-  ready: 'bg-success-900 text-success-400 ring-success-400/20',
-  processing: 'bg-warning-900 text-warning-400 ring-warning-400/20',
-  error: 'bg-danger-900 text-danger-400 ring-danger-400/20',
-  supported: 'bg-success-900 text-success-400 ring-success-400/20',
-  partially_supported: 'bg-warning-900 text-warning-400 ring-warning-400/20',
-  unsupported: 'bg-danger-900 text-danger-400 ring-danger-400/20',
+  ready: 'bg-success-400/10 text-success-400',
+  processing: 'bg-warning-400/10 text-warning-400',
+  error: 'bg-danger-400/10 text-danger-400',
+  supported: 'bg-success-400/10 text-success-400',
+  partially_supported: 'bg-warning-400/10 text-warning-400',
+  unsupported: 'bg-danger-400/10 text-danger-400',
 }
 
 const LABELS: Record<string, string> = {
@@ -14,10 +14,10 @@ const LABELS: Record<string, string> = {
 }
 
 export function StatusBadge({ status }: { status: Status }) {
-  const cls = MAP[status] ?? 'bg-surface-800 text-slate-400 ring-slate-400/20'
+  const cls = MAP[status] ?? 'bg-surface-200 text-slate-400'
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${cls}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${cls}`}
     >
       {LABELS[status] ?? status}
     </span>

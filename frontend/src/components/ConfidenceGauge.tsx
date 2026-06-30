@@ -5,58 +5,27 @@ interface ConfidenceGaugeProps {
   confidence: ConfidenceScore
 }
 
-function ringColor(score: number): { ring: string; text: string; glow: string } {
-  if (score >= 70) return { ring: '#22c55e', text: 'text-success-400', glow: 'shadow-success-500/30' }
-  if (score >= 40) return { ring: '#f59e0b', text: 'text-warning-400', glow: 'shadow-warning-500/30' }
-  return { ring: '#ef4444', text: 'text-danger-400', glow: 'shadow-danger-500/30' }
-}
-
 export function ConfidenceGauge({ confidence }: ConfidenceGaugeProps) {
   // Backend `confidence.score` is already on a 0–100 scale (see
   // compute_confidence: `score = 100 * weighted_sum`). Do NOT multiply again.
   const score = Math.round(confidence.score)
-  const { ring, text, glow } = ringColor(score)
-
-  // SVG ring
-  const r = 44
-  const circ = 2 * Math.PI * r
-  const dash = (score / 100) * circ
+  const deg = score * 3.6
 
   return (
-    <div className="rounded-xl border border-slate-700/50 bg-surface-850 p-5">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">
-        Confidence Score
-      </h3>
+    <div className="rounded-[14px] border border-surface-200 bg-surface-800 p-5">
+      <h3 className="section-label mb-4">Confidence Score</h3>
       <div className="flex items-center gap-6">
-        {/* Ring gauge */}
-        <div className={`relative flex-shrink-0 rounded-full shadow-lg ${glow}`}>
-          <svg width={108} height={108} viewBox="0 0 108 108">
-            {/* Background track */}
-            <circle
-              cx={54}
-              cy={54}
-              r={r}
-              fill="none"
-              stroke="#1e293b"
-              strokeWidth={10}
-            />
-            {/* Progress arc — starts at top (rotate -90deg) */}
-            <circle
-              cx={54}
-              cy={54}
-              r={r}
-              fill="none"
-              stroke={ring}
-              strokeWidth={10}
-              strokeLinecap="round"
-              strokeDasharray={`${dash} ${circ}`}
-              transform="rotate(-90 54 54)"
-              style={{ transition: 'stroke-dasharray 0.8s ease' }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={`text-2xl font-bold tabular-nums ${text}`}>{score}</span>
-            <span className="text-[10px] text-slate-500 uppercase tracking-wider">/ 100</span>
+        {/* Donut ring — conic-gradient drives the amber stop at score*3.6deg */}
+        <div
+          className="relative flex h-[88px] w-[88px] flex-shrink-0 items-center justify-center rounded-full"
+          style={{
+            background: `conic-gradient(from -90deg, #d97a3a 0 ${deg}deg, #252119 ${deg}deg 360deg)`,
+            boxShadow: '0 0 26px rgba(217,122,58,.22)',
+          }}
+        >
+          <div className="flex h-[66px] w-[66px] flex-col items-center justify-center rounded-full bg-surface-800">
+            <span className="font-serif text-3xl leading-none text-slate-100">{score}</span>
+            <span className="text-[10px] text-slate-400">/ 100</span>
           </div>
         </div>
 

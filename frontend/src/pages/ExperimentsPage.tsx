@@ -3,33 +3,24 @@ import { useExperiments, usePrompts } from '../hooks'
 import { Spinner } from '../components/Spinner'
 import { EmptyState } from '../components/EmptyState'
 import { StatusBadge } from '../components/StatusBadge'
-import { FlaskConical, CheckCircle } from 'lucide-react'
 import type { Experiment, PromptVersion } from '../lib/types'
 
 function ExperimentCard({ exp }: { exp: Experiment }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="rounded-xl border border-slate-700/50 bg-surface-850">
-      <button
-        className="w-full flex items-start gap-3 px-4 py-4 text-left"
-        onClick={() => setOpen((o) => !o)}
-      >
-        <FlaskConical size={16} className="flex-shrink-0 mt-0.5 text-accent-400" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-200">{exp.name}</p>
-          {exp.description && (
-            <p className="mt-0.5 text-xs text-slate-500 truncate">{exp.description}</p>
-          )}
-          <p className="mt-1 text-[10px] text-slate-600">
-            {new Date(exp.created_at).toLocaleDateString()}
-          </p>
+    <div className="rounded-[14px] border border-surface-200 bg-surface-800">
+      <button className="flex w-full items-start gap-3 px-5 py-4 text-left" onClick={() => setOpen((o) => !o)}>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-semibold text-slate-100">{exp.name}</p>
+          {exp.description && <p className="mt-0.5 truncate text-[12px] text-slate-400">{exp.description}</p>}
+          <p className="mt-1 text-[10px] text-slate-600">{new Date(exp.created_at).toLocaleDateString()}</p>
         </div>
         {exp.metrics && (
-          <div className="flex-shrink-0 text-right">
+          <div className="flex-shrink-0 space-y-0.5 text-right">
             {Object.entries(exp.metrics)
               .slice(0, 2)
               .map(([k, v]) => (
-                <p key={k} className="text-xs tabular-nums text-slate-400">
+                <p key={k} className="text-[12px] tabular-nums text-slate-400">
                   <span className="text-slate-600">{k}: </span>
                   {(v * 100).toFixed(1)}%
                 </p>
@@ -38,19 +29,19 @@ function ExperimentCard({ exp }: { exp: Experiment }) {
         )}
       </button>
       {open && (
-        <div className="border-t border-slate-800 px-4 py-3 space-y-2">
-          <p className="text-xs font-medium text-slate-500">Config</p>
-          <pre className="rounded-lg bg-surface-900 p-3 text-[11px] font-mono text-slate-400 overflow-x-auto">
+        <div className="space-y-3 border-t border-surface-50 px-5 py-4">
+          <p className="section-label">Config</p>
+          <pre className="overflow-x-auto rounded-[10px] bg-surface-850 p-3 font-mono text-[11px] text-slate-400">
             {JSON.stringify(exp.config, null, 2)}
           </pre>
           {exp.metrics && (
             <>
-              <p className="text-xs font-medium text-slate-500 mt-3">Metrics</p>
+              <p className="section-label">Metrics</p>
               <div className="grid grid-cols-3 gap-2">
                 {Object.entries(exp.metrics).map(([k, v]) => (
-                  <div key={k} className="rounded-lg bg-surface-900 px-3 py-2">
-                    <p className="text-[10px] text-slate-500 uppercase">{k}</p>
-                    <p className="text-sm font-bold tabular-nums text-slate-200">
+                  <div key={k} className="rounded-[10px] bg-surface-850 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-label text-slate-600">{k}</p>
+                    <p className="font-serif text-[20px] tabular-nums text-slate-100">
                       {(v * 100).toFixed(1)}%
                     </p>
                   </div>
@@ -68,32 +59,29 @@ function PromptCard({ prompt }: { prompt: PromptVersion }) {
   const [open, setOpen] = useState(false)
   return (
     <div
-      className={`rounded-xl border ${prompt.is_active ? 'border-accent-500/40 bg-accent-500/5' : 'border-slate-700/50 bg-surface-850'}`}
+      className={`rounded-[14px] border ${
+        prompt.is_active ? 'border-accent-500/40 bg-accent-500/[0.05]' : 'border-surface-200 bg-surface-800'
+      }`}
     >
-      <button
-        className="w-full flex items-start gap-3 px-4 py-4 text-left"
-        onClick={() => setOpen((o) => !o)}
-      >
-        <div className="flex-1 min-w-0">
+      <button className="flex w-full items-start gap-3 px-5 py-4 text-left" onClick={() => setOpen((o) => !o)}>
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-slate-200">{prompt.name}</p>
+            <p className="text-[14px] font-semibold text-slate-100">{prompt.name}</p>
             {prompt.is_active && (
-              <span className="flex items-center gap-0.5 rounded-full bg-accent-500/20 px-2 py-0.5 text-[10px] font-medium text-accent-400">
-                <CheckCircle size={10} /> Active
+              <span className="rounded-full bg-accent-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-500">
+                Active
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-xs text-slate-500">v{prompt.version}</p>
-          {prompt.description && (
-            <p className="mt-1 text-xs text-slate-600 truncate">{prompt.description}</p>
-          )}
+          <p className="mt-0.5 text-[12px] text-slate-500">v{prompt.version}</p>
+          {prompt.description && <p className="mt-1 truncate text-[12px] text-slate-600">{prompt.description}</p>}
         </div>
         <StatusBadge status={prompt.is_active ? 'ready' : 'processing'} />
       </button>
       {open && (
-        <div className="border-t border-slate-800 px-4 py-3">
-          <p className="text-xs font-medium text-slate-500 mb-2">System Prompt</p>
-          <pre className="rounded-lg bg-surface-900 p-3 text-[11px] font-mono text-slate-400 whitespace-pre-wrap overflow-x-auto max-h-64 overflow-y-auto">
+        <div className="border-t border-surface-50 px-5 py-4">
+          <p className="section-label mb-2">System Prompt</p>
+          <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-[10px] bg-surface-850 p-3 font-mono text-[11px] text-slate-400">
             {prompt.system_prompt}
           </pre>
         </div>
@@ -108,22 +96,22 @@ export function ExperimentsPage() {
   const [tab, setTab] = useState<'experiments' | 'prompts'>('experiments')
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-slate-700/50 px-6 py-4">
-        <h1 className="text-lg font-semibold text-slate-100">Experiments & Prompts</h1>
-        <p className="text-xs text-slate-500 mt-0.5">Track experiments and manage prompt versions</p>
-      </div>
+    <div className="h-full overflow-y-auto px-8 py-7">
+      <h1 className="text-[26px] font-bold leading-tight tracking-tight text-slate-100">
+        Experiments &amp; Prompts
+      </h1>
+      <p className="mt-0.5 text-[13px] text-slate-400">Track experiments and manage prompt versions</p>
 
       {/* Tab bar */}
-      <div className="flex border-b border-slate-700/50 px-6">
+      <div className="mt-5 flex gap-1 border-b border-surface-200">
         {(['experiments', 'prompts'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`capitalize px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            className={`-mb-px border-b-2 px-4 py-2.5 text-[13px] font-medium capitalize transition-colors ${
               tab === t
-                ? 'border-accent-500 text-accent-400'
-                : 'border-transparent text-slate-500 hover:text-slate-300'
+                ? 'border-accent-500 text-accent-500'
+                : 'border-transparent text-slate-500 hover:text-slate-100'
             }`}
           >
             {t}
@@ -131,7 +119,7 @@ export function ExperimentsPage() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+      <div className="mt-5 space-y-4">
         {tab === 'experiments' && (
           <>
             {expLoading && (
@@ -141,12 +129,18 @@ export function ExperimentsPage() {
             )}
             {!expLoading && (!experiments || experiments.length === 0) && (
               <EmptyState
-                icon={<FlaskConical size={28} />}
+                icon={<span className="font-serif text-[34px] italic">⚗</span>}
                 title="No experiments"
                 description="Experiments will appear here once created via the API."
               />
             )}
-            {experiments?.map((exp) => <ExperimentCard key={exp.id} exp={exp} />)}
+            {experiments && experiments.length > 0 && (
+              <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
+                {experiments.map((exp) => (
+                  <ExperimentCard key={exp.id} exp={exp} />
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -159,7 +153,7 @@ export function ExperimentsPage() {
             )}
             {!promptsLoading && (!prompts || prompts.length === 0) && (
               <EmptyState
-                icon={<FlaskConical size={28} />}
+                icon={<span className="font-serif text-[34px] italic">¶</span>}
                 title="No prompt versions"
                 description="Prompt versions will appear here once configured."
               />

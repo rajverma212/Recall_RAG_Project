@@ -1,73 +1,80 @@
 import { NavLink } from 'react-router-dom'
-import {
-  MessageSquare,
-  Search,
-  FileText,
-  BarChart2,
-  FlaskConical,
-  Activity,
-  Layers,
-  ShieldAlert,
-  FileCode,
-  Server,
-} from 'lucide-react'
+import { useDocuments } from '../hooks/useDocuments'
 
 interface NavItem {
   to: string
   label: string
-  icon: React.ReactNode
 }
 
 const NAV: NavItem[] = [
-  { to: '/', label: 'Ask', icon: <MessageSquare size={18} /> },
-  { to: '/documents', label: 'Documents', icon: <FileText size={18} /> },
-  { to: '/retrieval', label: 'Retrieval Inspector', icon: <Search size={18} /> },
-  { to: '/evaluations', label: 'Evaluations', icon: <BarChart2 size={18} /> },
-  { to: '/hallucination', label: 'Hallucination', icon: <ShieldAlert size={18} /> },
-  { to: '/analytics', label: 'Analytics', icon: <Activity size={18} /> },
-  { to: '/experiments', label: 'Experiments', icon: <FlaskConical size={18} /> },
-  { to: '/prompts', label: 'Prompts', icon: <FileCode size={18} /> },
-  { to: '/system', label: 'System', icon: <Server size={18} /> },
+  { to: '/', label: 'Ask' },
+  { to: '/documents', label: 'Documents' },
+  { to: '/retrieval', label: 'Retrieval Inspector' },
+  { to: '/evaluations', label: 'Evaluations' },
+  { to: '/hallucination', label: 'Hallucination' },
+  { to: '/analytics', label: 'Analytics' },
+  { to: '/experiments', label: 'Experiments' },
+  { to: '/prompts', label: 'Prompts' },
+  { to: '/system', label: 'System' },
 ]
 
 export function Sidebar() {
+  const { data: documents } = useDocuments()
+  const docCount = documents?.length ?? 0
+
   return (
-    <aside className="flex h-screen w-56 flex-col border-r border-slate-700/50 bg-surface-950">
+    <aside className="flex h-screen w-52 flex-col bg-surface-950 px-3 py-5">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-slate-700/50">
+      <div className="flex items-center gap-2.5 px-2 pb-6">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-500">
-          <Layers size={14} className="text-white" />
+          <span className="font-serif text-base italic leading-none text-surface-900">R</span>
         </div>
-        <span className="text-sm font-bold tracking-tight text-slate-100">RAG Platform</span>
+        <span className="text-sm font-bold tracking-tight text-slate-100">Recall</span>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
+      <nav className="flex-1 overflow-y-auto">
         <div className="space-y-0.5">
-          {NAV.map((item) => (
+          {NAV.map((item, i) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                `group flex items-center gap-3 rounded-[9px] px-3 py-2 text-[13px] transition-colors ${
                   isActive
-                    ? 'bg-accent-500/15 text-accent-400'
-                    : 'text-slate-400 hover:bg-surface-800 hover:text-slate-200'
+                    ? 'bg-accent-500/[0.12] font-semibold text-accent-500'
+                    : 'font-medium text-slate-600 hover:bg-surface-800 hover:text-slate-100'
                 }`
               }
             >
-              {item.icon}
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={`font-serif text-[13px] italic ${
+                      isActive ? 'text-accent-500' : 'text-accent-500/50'
+                    }`}
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  {item.label}
+                </>
+              )}
             </NavLink>
           ))}
         </div>
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-slate-700/50 px-4 py-3">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-slate-600">
-          Production RAG
+      {/* Corpus footer badge */}
+      <div className="mt-4 rounded-[9px] bg-surface-850 px-3.5 py-3">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-success-400 animate-pulse-dot" />
+          </span>
+          <span className="section-label">Production</span>
+        </div>
+        <p className="mt-1.5 text-[13px] font-semibold text-slate-100">
+          {docCount} {docCount === 1 ? 'document' : 'documents'}
         </p>
       </div>
     </aside>
