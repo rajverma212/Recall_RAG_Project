@@ -12,3 +12,6 @@ data/
 evaluation/reports/*.html
 .idea/
 .vscode/
+
+# Design handoff reference (not app code)
+design_handoff_recall_ui/
