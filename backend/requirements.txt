@@ -4,6 +4,8 @@ uvicorn[standard]==0.34.0
 python-multipart==0.0.20
 pydantic==2.10.4
 pydantic-settings==2.7.1
+# Per-IP rate limiting on the public API (protects LLM-spend endpoints).
+limits==5.8.0
 
 # ----- Database -----
 sqlalchemy==2.0.36

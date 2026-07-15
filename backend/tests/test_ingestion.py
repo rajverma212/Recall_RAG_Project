@@ -279,3 +279,25 @@ class TestDeleteDocument:
         assert db.get(Document, doc_id) is None
         remaining_chunks = db.query(Chunk).filter(Chunk.document_id == doc_id).all()
         assert remaining_chunks == []
+
+    def test_delete_all_documents(self, db):
+        from app.models.document import Document
+        from app.models.chunk import Chunk
+        svc = _make_service()
+        for name in ("one.txt", "two.txt"):
+            svc.ingest_upload(
+                db,
+                filename=name,
+                content_type="text/plain",
+                raw_bytes=_txt_bytes(f"Contents of {name}."),
+                strategy="fixed",
+            )
+
+        count = svc.delete_all_documents(db)
+        assert count == 2
+        assert db.query(Document).all() == []
+        assert db.query(Chunk).all() == []
+
+    def test_delete_all_documents_empty_corpus(self, db):
+        svc = _make_service()
+        assert svc.delete_all_documents(db) == 0

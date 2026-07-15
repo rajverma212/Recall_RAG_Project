@@ -4,8 +4,37 @@ import { Heatmap } from '../components/Heatmap'
 import { StatusBadge } from '../components/StatusBadge'
 import { MetricCard } from '../components/MetricCard'
 import { Spinner } from '../components/Spinner'
-import { EmptyState } from '../components/EmptyState'
 import type { AskResponse, Citation } from '../lib/types'
+
+// Claim-dense starter questions drawn from the live corpus. These reliably
+// produce multiple cited sentences, so the verification table has something to
+// show — the whole point of this page. Click to fill the box and analyze.
+const SAMPLE_QUESTIONS = [
+  'What are the four process activities?',
+  'What is the 401(k) employer match?',
+  'What are the SEV-1 incident response and resolution targets?',
+  'What skills are listed in this resume?',
+]
+
+// Explains what the page does before any query is run, so a first-time visitor
+// knows what to type and what they'll get back.
+const HOW_IT_WORKS = [
+  {
+    step: '01',
+    title: 'Ask a factual question',
+    body: 'Answered with RAG over your indexed documents, exactly like the Ask tab.',
+  },
+  {
+    step: '02',
+    title: 'Every claim is checked',
+    body: 'The answer is split into sentences and each is verified against the sources it cites.',
+  },
+  {
+    step: '03',
+    title: 'See where trust breaks',
+    body: 'Per-claim status, citation accuracy, and an overall hallucination-risk score.',
+  },
+]
 
 function computeMetrics(response: AskResponse) {
   const verifications = response.verifications
@@ -64,13 +93,28 @@ export function HallucinationDashboardPage() {
   const isLoading = askMutation.isPending
   const error = askMutation.error
 
+  const runQuery = useCallback(
+    (q: string) => {
+      if (!q.trim() || isLoading) return
+      askMutation.mutate({ question: q, include_trace: false })
+    },
+    [isLoading, askMutation],
+  )
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault()
-      if (!question.trim() || isLoading) return
-      askMutation.mutate({ question, include_trace: false })
+      runQuery(question)
     },
-    [question, isLoading, askMutation],
+    [question, runQuery],
+  )
+
+  const handleSample = useCallback(
+    (q: string) => {
+      setQuestion(q)
+      runQuery(q)
+    },
+    [runQuery],
   )
 
   const metrics = response ? computeMetrics(response) : null
@@ -95,18 +139,44 @@ export function HallucinationDashboardPage() {
               void handleSubmit(e)
             }
           }}
-          placeholder="Ask a question to analyze claim verifications..."
+          placeholder="Ask a factual question about your documents — e.g. What is the 401(k) employer match?"
           rows={3}
           className="min-h-[88px] w-full resize-none rounded-xl border border-surface-200 bg-surface-800 px-4 py-3 text-[14px] text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-accent-500/60"
         />
-        <button
-          type="submit"
-          disabled={isLoading || !question.trim()}
-          className="rounded-[10px] bg-accent-500 px-5 py-2 text-[14px] font-semibold text-surface-900 transition-colors hover:bg-accent-400 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isLoading ? 'Analyzing…' : 'Analyze'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={isLoading || !question.trim()}
+            className="rounded-[10px] bg-accent-500 px-5 py-2 text-[14px] font-semibold text-surface-900 transition-colors hover:bg-accent-400 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading ? 'Analyzing…' : 'Analyze'}
+          </button>
+          <p className="text-[12px] text-slate-600">
+            Works best with specific, factual questions — each sentence gets verified against its
+            sources.
+          </p>
+        </div>
       </form>
+
+      {/* Sample questions — remove the blank-page guesswork */}
+      {!response && (
+        <div className="mt-6 space-y-2.5">
+          <p className="section-label">Try one of these</p>
+          <div className="flex flex-wrap gap-2">
+            {SAMPLE_QUESTIONS.map((q) => (
+              <button
+                key={q}
+                type="button"
+                disabled={isLoading}
+                onClick={() => handleSample(q)}
+                className="rounded-[20px] border border-surface-200 bg-surface-800 px-3.5 py-1.5 text-[13px] text-slate-400 transition-colors hover:border-accent-500/50 hover:text-accent-300 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mt-6 rounded-xl border border-danger-400/30 bg-danger-900/30 px-4 py-3 text-[13px] text-danger-400">
@@ -256,13 +326,70 @@ export function HallucinationDashboardPage() {
         </div>
       )}
 
+      {isLoading && (
+        <div className="mt-10 flex flex-col items-center gap-3 py-10 text-center">
+          <Spinner size="lg" />
+          <p className="text-[13px] text-slate-400">Verifying each claim against its sources…</p>
+        </div>
+      )}
+
       {!response && !isLoading && !error && (
-        <div className="mt-10">
-          <EmptyState
-            icon={<span className="font-serif text-[42px] italic">!</span>}
-            title="Hallucination Analysis"
-            description="Submit a question to see per-claim verification status, citation accuracy, and hallucination risk metrics."
-          />
+        <div className="mt-8 space-y-3.5">
+          {/* How it works */}
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+            {HOW_IT_WORKS.map((s) => (
+              <div
+                key={s.step}
+                className="rounded-[14px] border border-surface-200 bg-surface-800 p-5"
+              >
+                <span className="font-serif text-[20px] italic leading-none text-accent-500">
+                  {s.step}
+                </span>
+                <h3 className="mt-3 text-[14px] font-semibold text-slate-100">{s.title}</h3>
+                <p className="mt-1.5 text-[12.5px] leading-relaxed text-slate-400">{s.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* What the results look like */}
+          <div className="rounded-[14px] border border-surface-200 bg-surface-800 p-5">
+            <h2 className="section-label mb-3">What you'll see</h2>
+            <p className="text-[13px] leading-relaxed text-slate-400">
+              Every sentence of the answer is labelled by how well its cited sources back it up:
+            </p>
+            <div className="mt-3.5 space-y-2.5">
+              {[
+                {
+                  dot: 'bg-success-400',
+                  label: 'Supported',
+                  body: 'the cited passage clearly backs the claim.',
+                },
+                {
+                  dot: 'bg-warning-400',
+                  label: 'Partial',
+                  body: 'the source is related but only partly confirms it.',
+                },
+                {
+                  dot: 'bg-danger-400',
+                  label: 'Unsupported',
+                  body: 'no citation, or the source does not support the claim — a hallucination risk.',
+                },
+              ].map((r) => (
+                <div key={r.label} className="flex items-start gap-2.5">
+                  <span className={`mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full ${r.dot}`} />
+                  <p className="text-[12.5px] leading-relaxed text-slate-400">
+                    <span className="font-medium text-slate-100">{r.label}</span> — {r.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-[12px] leading-relaxed text-slate-600">
+              You'll also get an overall <span className="text-slate-400">citation accuracy</span>,{' '}
+              <span className="text-slate-400">unsupported-claim rate</span>, and a{' '}
+              <span className="text-slate-400">hallucination-risk</span> score across the whole
+              answer.
+            </p>
+          </div>
         </div>
       )}
     </div>

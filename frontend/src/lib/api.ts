@@ -5,7 +5,9 @@ import type {
   ChunkingStrategy,
   Document,
   EvaluationDetail,
+  EvaluationJob,
   EvaluationRun,
+  EvaluationRunRequest,
   Experiment,
   HealthResponse,
   IngestResponse,
@@ -102,6 +104,10 @@ export function deleteDocument(id: string): Promise<void> {
   return request<void>(`/documents/${id}`, { method: 'DELETE' })
 }
 
+export function clearDocuments(): Promise<{ deleted_count: number }> {
+  return request<{ deleted_count: number }>('/documents', { method: 'DELETE' })
+}
+
 // ─── Evaluations ─────────────────────────────────────────────────────────────
 
 export function listEvaluations(): Promise<EvaluationRun[]> {
@@ -110,6 +116,17 @@ export function listEvaluations(): Promise<EvaluationRun[]> {
 
 export function getEvaluation(id: string): Promise<EvaluationDetail> {
   return request<EvaluationDetail>(`/evaluations/${id}`)
+}
+
+export function getEvaluationStatus(): Promise<EvaluationJob> {
+  return request<EvaluationJob>('/evaluations/status')
+}
+
+export function startEvaluation(body?: EvaluationRunRequest): Promise<EvaluationJob> {
+  return request<EvaluationJob>('/evaluations/run', {
+    method: 'POST',
+    body: JSON.stringify(body ?? {}),
+  })
 }
 
 // ─── Analytics ───────────────────────────────────────────────────────────────

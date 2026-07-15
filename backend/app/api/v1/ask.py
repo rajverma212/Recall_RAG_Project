@@ -14,6 +14,8 @@ from app.services.rag_service import get_rag_service
 router = APIRouter()
 
 
+# Per-IP rate limiting for these LLM-spend endpoints is applied globally by
+# RateLimitMiddleware (see app.core.ratelimit) — no per-route decorator needed.
 @router.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest, db: Session = Depends(get_db)):
     service = get_rag_service()

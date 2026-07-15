@@ -36,6 +36,11 @@ services:
       POSTGRES_HOST: postgres
       QDRANT_HOST: qdrant
       ENVIRONMENT: ${ENVIRONMENT:-local}
+      # CORS + per-IP rate limiting (defaults are demo-friendly; pin/adjust in prod).
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_DEFAULT: ${RATE_LIMIT_DEFAULT:-200/minute}
+      RATE_LIMIT_ASK: ${RATE_LIMIT_ASK:-15/minute}
       # LLM provider (default: anthropic). Forwarded so the configured provider
       # can actually activate in-container — without these the backend silently
       # falls back to the local deterministic provider.

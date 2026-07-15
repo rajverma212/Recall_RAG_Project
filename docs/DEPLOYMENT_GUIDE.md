@@ -26,7 +26,7 @@ For a local/demo deployment, use Docker Compose instead — see the [README](../
                 └── Anthropic API  (ANTHROPIC_API_KEY)
 ```
 
-CORS is currently open (`allow_origins=["*"]`). Before real exposure, lock it to the Vercel origin (see [Production considerations](#production-considerations)).
+CORS defaults to open (`ALLOWED_ORIGINS=*`) for the local/demo stack. Before real exposure, set `ALLOWED_ORIGINS` to the Vercel origin; per-IP rate limiting is on by default (see [Production considerations](#production-considerations)).
 
 ---
 
@@ -131,8 +131,9 @@ Expected: health `ok`, providers `anthropic` / `openai` (or your choices), and a
 
 ## 6. Production considerations
 
-- **CORS.** Replace `allow_origins=["*"]` in [`main.py`](../backend/app/main.py) with the Vercel origin(s) before exposing publicly. Pull from an env var so it differs per environment.
-- **Auth & rate limiting.** There is no request auth or rate limiting yet (documented limitation). Add an API key / JWT gateway and per-IP/tenant quotas before any untrusted exposure.
+- **CORS.** Origins are env-driven via `ALLOWED_ORIGINS` (comma-separated) — no code change needed. It defaults to `*`; set it to the Vercel origin(s) in production, e.g. `ALLOWED_ORIGINS=https://recall.vercel.app`. When it is not `*`, credentialed requests are enabled (the CORS spec forbids credentials with a wildcard origin). Implemented in [`main.py`](../backend/app/main.py) / [`config.py`](../backend/app/core/config.py).
+- **Rate limiting.** Per-client-IP limiting is on by default — a small pure-ASGI middleware on the [`limits`](https://limits.readthedocs.io) library (see [`ratelimit.py`](../backend/app/core/ratelimit.py)): a global `RATE_LIMIT_DEFAULT` (200/min) on all routes, a stricter `RATE_LIMIT_ASK` (15/min) on the LLM-spend endpoints (`/v1/ask`, `/v1/ask/stream`), and the liveness `/health` exempt so platform healthchecks are never throttled. Over-limit requests get `429` with a `Retry-After` header; allowed requests carry `RateLimit-Limit/Remaining/Reset`. Behind Railway/Vercel the client IP is read from `X-Forwarded-For`. Tune via env or set `RATE_LIMIT_ENABLED=false` to disable. Limits are in-process (per replica); for shared limits across replicas, point `limits` at a Redis/Memcached storage backend instead of the in-memory store.
+- **Auth.** There is still no request auth (documented limitation). Rate limiting curbs anonymous abuse, but add an API key / JWT gateway before exposing write/ingest endpoints to untrusted users.
 - **Secrets.** All keys are env-only and never logged; `/v1/providers` reports key *presence*, never values. Keep `.env` out of git (already in `.gitignore`).
 - **Startup validation.** With `ENVIRONMENT=production`, the service intentionally **fails to boot** on a missing provider key or an embedding-dimension mismatch — this is a feature (no silent quality degradation). Read the deploy log's `startup:` lines if a deploy won't go green.
 - **Cost controls.** Per-query cost is tracked from live provider pricing and surfaced in `/v1/metrics` and analytics. Set provider-side spend limits as a backstop.

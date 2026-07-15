@@ -9,7 +9,12 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts'
-import { useEvaluations, useEvaluation } from '../hooks'
+import {
+  useEvaluations,
+  useEvaluation,
+  useEvaluationJob,
+  useStartEvaluation,
+} from '../hooks'
 import { MetricCard } from '../components/MetricCard'
 import { StatusBadge } from '../components/StatusBadge'
 import { Spinner } from '../components/Spinner'
@@ -31,10 +36,39 @@ function pct(v: number | null): string {
 
 const CATEGORIES = ['direct', 'multi_hop', 'ambiguous', 'no_answer'] as const
 
+// Metric definitions — power the hover hints on each MetricCard and keep the
+// UI self-documenting (mirrors evaluation/README.md).
+const METRIC_HINTS: Record<string, string> = {
+  retrieval_recall:
+    'Of the source documents needed to answer each question, the fraction the retriever actually surfaced. Low → tune chunking or dense/sparse weights.',
+  answer_correctness:
+    "How closely answers match ground truth: must-include facts (60%) + word overlap (40%). Low → improve the prompt or generation model.",
+  faithfulness:
+    "Fraction of the answer's claims that are backed by the cited context. Low → the model is hallucinating beyond its sources.",
+  citation_accuracy:
+    'Stricter faithfulness — only fully-supported claims count. Measures how precise the citations are.',
+  confidence_calibration:
+    '1 − Expected Calibration Error: how well the confidence score tracks actual correctness. Low → the model is over- or under-confident.',
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  direct: 'Single-hop factual questions with a clear answer.',
+  multi_hop: 'Questions that need facts stitched from multiple sections or docs.',
+  ambiguous: 'Broad-scope questions that require synthesis.',
+  no_answer: 'Questions the corpus cannot answer — the system should abstain.',
+}
+
 export function EvaluationPage() {
   const { data: runs, isLoading, error } = useEvaluations()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { data: detail, isLoading: detailLoading } = useEvaluation(selectedId)
+  const { data: job } = useEvaluationJob()
+  const startEval = useStartEvaluation()
+
+  const [showHelp, setShowHelp] = useState(false)
+
+  const running = job?.status === 'running' || startEval.isPending
+  const jobError = job?.status === 'error' ? job.error : null
 
   const selected = runs?.find((r) => r.id === selectedId) ?? null
 
@@ -56,14 +90,84 @@ export function EvaluationPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="px-8 pb-5 pt-7">
-        <h1 className="text-[26px] font-bold leading-tight tracking-tight text-slate-100">
-          Evaluations
-        </h1>
-        <p className="mt-0.5 text-[13px] text-slate-400">
-          Compare evaluation runs and per-example results
-        </p>
+      <div className="flex items-start justify-between gap-4 px-8 pb-5 pt-7">
+        <div>
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-slate-100">
+            Evaluations
+          </h1>
+          <p className="mt-0.5 text-[13px] text-slate-400">
+            Compare evaluation runs and per-example results
+          </p>
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <button
+            onClick={() => setShowHelp((v) => !v)}
+            className="rounded-lg border border-surface-200 px-3 py-2 text-[12px] font-medium text-slate-400 transition-colors hover:border-surface-100 hover:text-slate-200"
+          >
+            {showHelp ? 'Hide guide' : 'How it works'}
+          </button>
+          <button
+            onClick={() => startEval.mutate(undefined)}
+            disabled={running}
+            className="flex items-center gap-2 rounded-lg bg-accent-500 px-4 py-2 text-[12px] font-semibold text-surface-900 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {running && <Spinner />}
+            {running ? 'Running…' : 'Run evaluation'}
+          </button>
+        </div>
       </div>
+
+      {(showHelp || (runs && runs.length === 0 && !isLoading)) && (
+        <div className="mx-8 mb-4 rounded-[14px] border border-surface-200 bg-surface-800 p-5">
+          <h2 className="section-label mb-2">What this is</h2>
+          <p className="text-[13px] leading-relaxed text-slate-300">
+            Each <span className="text-slate-100">run</span> replays a fixed set of{' '}
+            <span className="text-slate-100">70 labeled questions</span> through the RAG pipeline and
+            scores the answers on five metrics. Use it to <span className="text-slate-100">prove a
+            change</span> — a new chunking strategy, retrieval weights, or prompt — actually improved
+            answer quality before shipping, and to see which question types are weakest.
+          </p>
+          <div className="mt-4 grid gap-x-6 gap-y-2 text-[12px] sm:grid-cols-2">
+            {Object.entries(METRIC_HINTS).map(([key, hint]) => (
+              <div key={key} className="flex gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-accent-500" />
+                <p className="text-slate-400">
+                  <span className="font-medium capitalize text-slate-200">
+                    {key.replace(/_/g, ' ')}
+                  </span>{' '}
+                  — {hint}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 border-t border-surface-100 pt-3 text-[12px] text-slate-500">
+            <span className="font-medium text-slate-400">When to run:</span> after any change to
+            retrieval, chunking, or prompts. Then compare runs side-by-side in the chart, and click a
+            run to see which questions passed or failed. An example passes when recall ≥ 0.5,
+            correctness ≥ 0.4, and faithfulness ≥ 0.5.
+          </p>
+        </div>
+      )}
+
+      {(running || jobError) && (
+        <div
+          className={`mx-8 mb-4 flex items-center gap-3 rounded-[12px] border px-4 py-3 text-[12px] ${
+            jobError
+              ? 'border-danger-400/40 bg-danger-400/5 text-danger-400'
+              : 'border-accent-500/40 bg-accent-500/5 text-slate-300'
+          }`}
+        >
+          {running && <Spinner />}
+          {running ? (
+            <span>
+              Running <span className="text-slate-100">{job?.name ?? 'evaluation'}</span> across 70
+              examples — this can take a minute. Results appear automatically when done.
+            </span>
+          ) : (
+            <span>Evaluation failed: {jobError}</span>
+          )}
+        </div>
+      )}
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Run list */}
@@ -78,7 +182,7 @@ export function EvaluationPage() {
             <EmptyState
               icon={<span className="font-serif text-[34px] italic">∅</span>}
               title="No runs"
-              description="Run an evaluation first."
+              description="Click “Run evaluation” to create one."
             />
           )}
           {runs &&
@@ -132,11 +236,11 @@ export function EvaluationPage() {
           {selectedId && selected && (
             <>
               <div className="grid grid-cols-2 gap-3.5 md:grid-cols-5">
-                <MetricCard label="Retrieval Recall" value={pct(selected.retrieval_recall)} size="md" />
-                <MetricCard label="Correctness" value={pct(selected.answer_correctness)} size="md" />
-                <MetricCard label="Faithfulness" value={pct(selected.faithfulness)} size="md" />
-                <MetricCard label="Citation Acc." value={pct(selected.citation_accuracy)} size="md" />
-                <MetricCard label="Conf. Calibration" value={pct(selected.confidence_calibration)} size="md" />
+                <MetricCard label="Retrieval Recall" value={pct(selected.retrieval_recall)} size="md" hint={METRIC_HINTS.retrieval_recall} />
+                <MetricCard label="Correctness" value={pct(selected.answer_correctness)} size="md" hint={METRIC_HINTS.answer_correctness} />
+                <MetricCard label="Faithfulness" value={pct(selected.faithfulness)} size="md" hint={METRIC_HINTS.faithfulness} />
+                <MetricCard label="Citation Acc." value={pct(selected.citation_accuracy)} size="md" hint={METRIC_HINTS.citation_accuracy} />
+                <MetricCard label="Conf. Calibration" value={pct(selected.confidence_calibration)} size="md" hint={METRIC_HINTS.confidence_calibration} />
               </div>
 
               {detailLoading && (
@@ -153,7 +257,7 @@ export function EvaluationPage() {
                   return (
                     <div key={cat} className="overflow-hidden rounded-[14px] border border-surface-200 bg-surface-800">
                       <div className="flex items-center justify-between border-b border-surface-50 px-5 py-3">
-                        <span className="section-label">{cat.replace('_', ' ')}</span>
+                        <span className="section-label" title={CATEGORY_LABELS[cat]}>{cat.replace('_', ' ')}</span>
                         <span className="text-[12px] text-slate-500">
                           {passed}/{rows.length} passed
                         </span>
@@ -196,8 +300,8 @@ export function EvaluationPage() {
           {!selectedId && (!runs || runs.length === 0) && !isLoading && (
             <EmptyState
               icon={<span className="font-serif text-[34px] italic">∅</span>}
-              title="No evaluation runs"
-              description="Run an evaluation to see results here."
+              title="No evaluation runs yet"
+              description="Click “Run evaluation” above to score the pipeline against 70 labeled questions."
             />
           )}
         </div>

@@ -76,8 +76,8 @@ export function PromptRegistryPage() {
         {!isLoading && !error && (!prompts || prompts.length === 0) && (
           <EmptyState
             icon={<span className="font-serif text-[34px] italic">¶</span>}
-            title="No prompt versions"
-            description="Prompt versions will appear here once configured via the API."
+            title="No prompt versions yet"
+            description="Each version is a snapshot of the system prompt used to generate answers, with one marked active — so you can compare wording and roll back. Configure one via the API to see it here."
           />
         )}
 

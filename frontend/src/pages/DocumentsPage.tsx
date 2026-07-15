@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { useDocuments, useIngest, useDeleteDocument } from '../hooks'
+import { useDocuments, useIngest, useDeleteDocument, useClearDocuments } from '../hooks'
 import { Spinner } from '../components/Spinner'
 import { EmptyState } from '../components/EmptyState'
 import type { ChunkingStrategy, Document } from '../lib/types'
@@ -84,9 +84,11 @@ function DropZone({
 
 export function DocumentsPage() {
   const [strategy, setStrategy] = useState<ChunkingStrategy>('recursive')
+  const [confirmingClear, setConfirmingClear] = useState(false)
   const { data: docs, isLoading, error } = useDocuments()
   const ingest = useIngest()
   const deleteDoc = useDeleteDocument()
+  const clearAll = useClearDocuments()
 
   const handleFiles = useCallback(
     (files: File[]) => {
@@ -157,7 +159,49 @@ export function DocumentsPage() {
               {docs.length}
             </span>
           )}
+          {docs && docs.length > 0 && (
+            <div className="ml-auto flex items-center gap-2">
+              {confirmingClear ? (
+                <>
+                  <span className="text-[12px] text-slate-400">
+                    Delete all {docs.length} documents and their vectors?
+                  </span>
+                  <button
+                    onClick={() => {
+                      clearAll.mutate(undefined, { onSettled: () => setConfirmingClear(false) })
+                    }}
+                    disabled={clearAll.isPending}
+                    className="rounded-[8px] bg-danger-400/15 px-3 py-1.5 text-[12px] font-semibold text-danger-400 transition-colors hover:bg-danger-400/25 disabled:opacity-50"
+                  >
+                    {clearAll.isPending ? 'Clearing…' : 'Yes, clear corpus'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmingClear(false)}
+                    disabled={clearAll.isPending}
+                    className="rounded-[8px] px-3 py-1.5 text-[12px] font-medium text-slate-400 transition-colors hover:text-slate-100"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setConfirmingClear(true)}
+                  className="rounded-[8px] border border-surface-200 px-3 py-1.5 text-[12px] font-medium text-slate-500 transition-colors hover:border-danger-400/40 hover:text-danger-400"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+          )}
         </div>
+        {clearAll.error && (
+          <p className="px-5 pb-3 text-[13px] text-danger-400">{clearAll.error.message}</p>
+        )}
+        {clearAll.isSuccess && (
+          <p className="px-5 pb-3 text-[12px] text-success-400">
+            Corpus cleared — {clearAll.data.deleted_count} documents removed.
+          </p>
+        )}
 
         {isLoading && (
           <div className="flex justify-center py-10">

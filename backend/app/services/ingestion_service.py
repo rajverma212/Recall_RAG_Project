@@ -255,6 +255,16 @@ class IngestionService:
         logger.info(f"Deleted document {document_id!r} and all its chunks")
         return True
 
+    def delete_all_documents(self, db: Session) -> int:
+        """Delete every document (and its chunks/vectors). Returns count deleted."""
+        from sqlalchemy import select
+
+        doc_ids = list(db.scalars(select(Document.id)).all())
+        for doc_id in doc_ids:
+            self.delete_document(db, doc_id)
+        logger.info(f"Cleared corpus: deleted {len(doc_ids)} documents")
+        return len(doc_ids)
+
 
 _ingestion_service: IngestionService | None = None
 

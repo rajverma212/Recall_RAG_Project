@@ -144,6 +144,24 @@ export interface EvaluationDetail {
   results: ExampleResult[]
 }
 
+export type EvaluationJobStatus = 'idle' | 'running' | 'done' | 'error'
+
+export interface EvaluationJob {
+  status: EvaluationJobStatus
+  name: string | null
+  run_id: string | null
+  started_at: string | null
+  finished_at: string | null
+  error: string | null
+}
+
+export interface EvaluationRunRequest {
+  name?: string
+  strategy?: ChunkingStrategy
+  dense_weight?: number
+  sparse_weight?: number
+}
+
 // ─── Analytics ───────────────────────────────────────────────────────────────
 
 export interface DayCount {

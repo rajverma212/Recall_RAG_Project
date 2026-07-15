@@ -25,6 +25,30 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     api_v1_prefix: str = "/v1"
 
+    # ----- CORS -----
+    # Comma-separated browser origins allowed to call the API. "*" allows any
+    # origin (fine for local Docker / a public read-only demo); in production set
+    # this to the deployed frontend origin(s), e.g.
+    # "https://recall.vercel.app,https://recall.yourdomain.dev". When it is not
+    # "*", credentialed requests are permitted (the spec forbids credentials with
+    # a wildcard origin).
+    allowed_origins: str = "*"
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        raw = self.allowed_origins.strip()
+        if raw == "*" or not raw:
+            return ["*"]
+        return [o.strip() for o in raw.split(",") if o.strip()]
+
+    # ----- Rate limiting (per client IP) -----
+    # A public URL means anyone can call the API; the generation endpoints spend
+    # real LLM-provider budget, so they get a stricter per-IP cap. Behind a proxy
+    # (Railway/Vercel) the client IP is read from X-Forwarded-For.
+    rate_limit_enabled: bool = True
+    rate_limit_default: str = "200/minute"  # all routes except liveness /health
+    rate_limit_ask: str = "15/minute"       # /v1/ask + /v1/ask/stream (LLM spend)
+
     # ----- Postgres -----
     postgres_user: str = "rag"
     postgres_password: str = "rag"

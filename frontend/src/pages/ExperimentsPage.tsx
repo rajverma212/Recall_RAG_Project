@@ -130,8 +130,8 @@ export function ExperimentsPage() {
             {!expLoading && (!experiments || experiments.length === 0) && (
               <EmptyState
                 icon={<span className="font-serif text-[34px] italic">⚗</span>}
-                title="No experiments"
-                description="Experiments will appear here once created via the API."
+                title="No experiments yet"
+                description="Experiments A/B-test different prompt or retrieval configurations and track which one answers more accurately. Create one via the API to see its variants and results here."
               />
             )}
             {experiments && experiments.length > 0 && (
@@ -154,8 +154,8 @@ export function ExperimentsPage() {
             {!promptsLoading && (!prompts || prompts.length === 0) && (
               <EmptyState
                 icon={<span className="font-serif text-[34px] italic">¶</span>}
-                title="No prompt versions"
-                description="Prompt versions will appear here once configured."
+                title="No prompt versions yet"
+                description="Each version is a snapshot of the system prompt used to generate answers, so you can compare and roll back. Configure one via the API to see it here."
               />
             )}
             {prompts?.map((p) => <PromptCard key={p.version} prompt={p} />)}

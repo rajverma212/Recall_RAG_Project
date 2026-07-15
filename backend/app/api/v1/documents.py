@@ -39,6 +39,14 @@ def list_documents(db: Session = Depends(get_db)):
     return list(docs)
 
 
+@router.delete("/documents")
+def clear_documents(db: Session = Depends(get_db)):
+    """Delete the entire corpus: all documents, chunks, and vectors."""
+    service = get_ingestion_service()
+    count = service.delete_all_documents(db)
+    return {"deleted_count": count}
+
+
 @router.delete("/documents/{document_id}")
 def delete_document(document_id: str, db: Session = Depends(get_db)):
     service = get_ingestion_service()

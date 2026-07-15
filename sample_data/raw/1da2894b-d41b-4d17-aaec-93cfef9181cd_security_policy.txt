@@ -1,0 +1,171 @@
+ACME CORP INFORMATION SECURITY POLICY
+Document ID: SEC-POL-001
+Classification: Internal
+Version: 2.0 | Effective Date: 2026-01-01
+Owner: CISO Office
+
+======================================================================
+1. PURPOSE AND SCOPE
+======================================================================
+
+This policy establishes the information security requirements for all Acme Corp employees, contractors, consultants, and third-party vendors with access to Acme Corp systems and data.
+
+Violations may result in disciplinary action up to and including termination, and may be referred to law enforcement.
+
+======================================================================
+2. DATA CLASSIFICATION
+======================================================================
+
+Acme Corp classifies data into four tiers:
+
+TIER 1 - PUBLIC
+- Definition: Information approved for public disclosure.
+- Examples: Marketing materials, published documentation, open-source code.
+- Controls: None required beyond basic accuracy checks.
+
+TIER 2 - INTERNAL
+- Definition: General business information not meant for public release.
+- Examples: Internal memos, org charts, non-sensitive meeting notes.
+- Controls: Access limited to Acme Corp employees; do not share externally without approval.
+
+TIER 3 - CONFIDENTIAL
+- Definition: Sensitive business or technical information whose disclosure could cause material harm.
+- Examples: Source code, financial data, customer PII, API keys, database credentials.
+- Controls:
+  * Encrypt at rest (AES-256) and in transit (TLS 1.2+).
+  * Access on need-to-know basis only.
+  * Must not be stored on personal devices or unapproved cloud storage.
+  * Audit logs required for access.
+
+TIER 4 - RESTRICTED
+- Definition: Highest sensitivity; limited to specific named individuals.
+- Examples: Board materials, M&A documents, security vulnerability details, cryptographic keys.
+- Controls:
+  * All Tier 3 controls plus.
+  * Dual authorization required for access.
+  * Stored only in approved Tier-4 vaults (HashiCorp Vault for secrets).
+  * Mandatory legal review before any sharing.
+
+======================================================================
+3. ACCESS CONTROL
+======================================================================
+
+3.1 Identity and Authentication
+- All employees must use SSO (Okta) for company systems.
+- Multi-factor authentication (MFA) is MANDATORY for all accounts accessing Tier 2 or higher data.
+- Approved MFA methods: Hardware FIDO2 keys (preferred), Okta Verify push notification, TOTP apps. SMS OTP is NOT permitted.
+- Passwords must be at least 16 characters. Use of a company-approved password manager (1Password Teams) is required.
+
+3.2 Privileged Access
+- Production database access requires approval through the PAM system (CyberArk) and logs all sessions.
+- Root/admin access is prohibited for routine work.
+- All privileged sessions are recorded and retained for 180 days.
+
+3.3 Least Privilege Principle
+- Access is granted based on job function. Requests beyond default access require manager and security team approval via the AccessRequest system.
+- Access is reviewed quarterly by department heads.
+- Access is automatically revoked within 24 hours of employment termination.
+
+======================================================================
+4. ENDPOINT SECURITY
+======================================================================
+
+4.1 Company-Managed Devices
+- All company-issued devices must have Jamf (macOS) or Intune (Windows) MDM enrolled.
+- Full disk encryption (FileVault for macOS, BitLocker for Windows) is mandatory.
+- Antivirus/EDR: CrowdStrike Falcon is deployed on all managed endpoints.
+- OS patches must be applied within 30 days of release for standard patches; within 7 days for critical patches.
+
+4.2 Personal Devices (BYOD)
+- BYOD is permitted only for email and Slack access via managed apps.
+- Corporate data must NOT be stored on personal devices.
+- VPN (Tailscale) must be active when accessing internal systems from personal devices.
+
+======================================================================
+5. NETWORK SECURITY
+======================================================================
+
+5.1 Production Network
+- Production systems reside in isolated AWS VPCs with no direct internet access.
+- All inbound traffic routes through the Cloudflare WAF and load balancer.
+- Bastion hosts use SSO + MFA + session recording.
+
+5.2 Office Network
+- Guest Wi-Fi is segmented from the corporate network.
+- Corporate Wi-Fi requires certificate-based authentication (802.1X).
+
+5.3 VPN
+- Remote access VPN: Tailscale (WireGuard-based). Split-tunnel with all corporate traffic routed through the VPN.
+
+======================================================================
+6. VULNERABILITY MANAGEMENT
+======================================================================
+
+6.1 Scanning
+- Weekly vulnerability scans of all production systems using Tenable.io.
+- Daily dependency scanning via Snyk (integrated into CI pipeline).
+
+6.2 Remediation SLAs
+| Severity | CVSS Score | Remediation Timeline |
+|----------|-----------|---------------------|
+| Critical | 9.0 – 10.0 | 24 hours |
+| High | 7.0 – 8.9 | 7 days |
+| Medium | 4.0 – 6.9 | 30 days |
+| Low | 0.1 – 3.9 | 90 days |
+
+6.3 Penetration Testing
+- Annual external penetration test by a third-party firm.
+- Bug bounty program (HackerOne, private): rewards from $100 to $50,000 based on severity.
+
+======================================================================
+7. INCIDENT RESPONSE (SECURITY)
+======================================================================
+
+Security incidents (suspected breach, malware, unauthorized access) must be reported to security@acmecorp.example.com IMMEDIATELY.
+
+Do NOT attempt to investigate or remediate a security incident independently. This can destroy forensic evidence.
+
+Security Incident Response Team (SIRT):
+- Lead: CISO (Sarah Kim)
+- Members: SRE Lead, Legal Counsel, HR representative
+
+Breach notification: If personal data is involved, Acme Corp must notify affected individuals within 72 hours per GDPR and applicable state law.
+
+======================================================================
+8. ACCEPTABLE USE POLICY
+======================================================================
+
+Employees may use company systems for incidental personal use, provided it:
+- Does not interfere with work duties.
+- Does not involve illegal activity.
+- Does not involve streaming large media files on the corporate network.
+- Does not involve storing personal data in company systems.
+
+Strictly prohibited:
+- Installing unlicensed software.
+- Bypassing security controls (firewall, MFA, MDM).
+- Cryptomining on company hardware or cloud accounts.
+- Accessing the Dark Web from company devices or networks.
+- Using AI coding assistants (e.g., GitHub Copilot, ChatGPT) for code classified as Tier 3 or Tier 4.
+
+======================================================================
+9. THIRD-PARTY AND VENDOR SECURITY
+======================================================================
+
+All vendors processing Tier 3 or Tier 4 data must:
+- Complete an annual security questionnaire.
+- Provide SOC 2 Type II report (or equivalent: ISO 27001 certification).
+- Sign a Data Processing Agreement (DPA) before data sharing begins.
+- Notify Acme Corp of any security incidents affecting Acme data within 24 hours.
+
+======================================================================
+10. POLICY REVIEW
+======================================================================
+
+This policy is reviewed annually by the CISO and updated as needed. All employees must re-acknowledge the policy annually during the January compliance training.
+
+Exceptions: Security policy exceptions require written approval from the CISO and are valid for no more than 90 days.
+
+======================================================================
+END OF SECURITY POLICY v2.0
+======================================================================
