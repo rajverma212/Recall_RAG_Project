@@ -13,6 +13,19 @@ from app.models.query_log import QueryLog
 router = APIRouter()
 
 
+def _err_detail(exc: Exception) -> str:
+    """Redact internal error text in production; surface it locally for debugging.
+
+    ``/health`` is unauthenticated, so raw exception strings (driver errors,
+    hostnames, stack fragments) would leak infrastructure detail to any caller
+    in a deployed environment. The boolean ``ok`` flag still tells the dashboard
+    a dependency is down.
+    """
+    if settings.environment == "production":
+        return "unavailable"
+    return str(exc)[:200]
+
+
 # --------------------------------------------------------------------------- #
 # Health                                                                       #
 # --------------------------------------------------------------------------- #
@@ -33,7 +46,7 @@ def health(response: Response, db: Session = Depends(get_db)) -> dict:
         db.execute(text("SELECT 1"))
         checks["database"] = {"ok": True}
     except Exception as exc:
-        checks["database"] = {"ok": False, "detail": str(exc)[:200]}
+        checks["database"] = {"ok": False, "detail": _err_detail(exc)}
 
     # 2. Vector store
     try:
@@ -48,7 +61,7 @@ def health(response: Response, db: Session = Depends(get_db)) -> dict:
             "vectors": vs.count(),
         }
     except Exception as exc:
-        checks["vector_store"] = {"ok": False, "detail": str(exc)[:200]}
+        checks["vector_store"] = {"ok": False, "detail": _err_detail(exc)}
 
     # 3. Active LLM provider (no network call — reports resolved provider).
     try:
@@ -63,7 +76,7 @@ def health(response: Response, db: Session = Depends(get_db)) -> dict:
             "model": llm.model,
         }
     except Exception as exc:
-        checks["llm_provider"] = {"ok": False, "detail": str(exc)[:200]}
+        checks["llm_provider"] = {"ok": False, "detail": _err_detail(exc)}
 
     # 4. Retrieval system (retriever + embedding provider construct cleanly).
     try:
@@ -74,7 +87,7 @@ def health(response: Response, db: Session = Depends(get_db)) -> dict:
         emb = get_embedding_provider()
         checks["retrieval"] = {"ok": True, "embedding_provider": emb.name}
     except Exception as exc:
-        checks["retrieval"] = {"ok": False, "detail": str(exc)[:200]}
+        checks["retrieval"] = {"ok": False, "detail": _err_detail(exc)}
 
     # Required for readiness: database + vector store + retrieval. The LLM
     # provider being on its local fallback degrades quality but is still "up",

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import re
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.schemas.ask import Citation, ClaimVerification, ConfidenceBreakdown
 
@@ -77,12 +78,17 @@ def compute_confidence(
     #    normalise by the theoretical max 1/(k=60+1) * weight=1.0.        #
     # ------------------------------------------------------------------ #
     if retrieval_scores:
-        # Theoretical max per-list contribution: 1/(rrf_k + 1) * weight
-        # With default k=60, max ≈ 0.016 per list, 0.032 combined
-        # Normalise relative to top score (keeps things in [0, 1])
+        # Normalise against the *theoretical* max RRF score, not the batch's own
+        # top score. A chunk ranked #1 by both retrievers scores
+        # (dense_weight + sparse_weight) / (rrf_k + 1) (see retrieval/fusion.py);
+        # dividing the mean of the top-3 by that anchors confidence to absolute
+        # retrieval strength. The old self-normalising form divided by the
+        # batch's own top score, which made any single-chunk result score exactly
+        # 1.0 and rated three tiny scores (0.001…) the same as three strong ones.
+        rrf_max = (settings.dense_weight + settings.sparse_weight) / (settings.rrf_k + 1)
         top_scores = sorted(retrieval_scores, reverse=True)[:3]
-        max_possible = top_scores[0] if top_scores[0] > 0 else 1.0
-        retrieval_confidence = min(1.0, sum(top_scores) / (len(top_scores) * max_possible))
+        mean_top = sum(top_scores) / len(top_scores)
+        retrieval_confidence = min(1.0, mean_top / rrf_max) if rrf_max > 0 else 0.0
     else:
         retrieval_confidence = 0.0
 

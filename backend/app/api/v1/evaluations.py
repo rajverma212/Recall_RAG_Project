@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_admin
 from app.core.logging import get_logger
 from app.db.session import get_db
 from app.models.evaluation import EvaluationRun
@@ -106,7 +107,7 @@ def evaluation_status():
         return dict(_job_state)
 
 
-@router.post("/evaluations/run", status_code=202)
+@router.post("/evaluations/run", status_code=202, dependencies=[Depends(require_admin)])
 def run_evaluation(body: RunRequest | None = None):
     """Kick off a new evaluation run in the background.
 

@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     rate_limit_default: str = "200/minute"  # all routes except liveness /health
     rate_limit_ask: str = "15/minute"       # /v1/ask + /v1/ask/stream (LLM spend)
 
+    # ----- Admin guard (optional; OFF by default) -----
+    # Reading and asking are always open so anyone can try the demo with no
+    # sign-in. Destructive/expensive routes (ingest, delete corpus/document,
+    # run evaluation) are gated by this key *only when it is set*: leave it blank
+    # and those routes stay open (current behaviour); set ADMIN_API_KEY and
+    # callers must send it in the `X-Admin-Key` header or get 401. This is the
+    # provision for locking the app down later without adding a login wall.
+    admin_api_key: str = Field(default="", description="If set, required for admin/destructive routes")
+
     # ----- Postgres -----
     postgres_user: str = "rag"
     postgres_password: str = "rag"
@@ -139,6 +148,12 @@ class Settings(BaseSettings):
     # ----- Generation / Citations -----
     min_confidence_to_answer: float = 20.0
     prompt_version: str = "v1"
+
+    # ----- Uploads -----
+    # Hard cap on a single ingested file. Bounds memory (the file is read into
+    # RAM for parsing) and disk, so an oversized/abusive upload can't OOM the
+    # worker or fill the data volume. Default 10 MiB — ample for docs/PDFs.
+    max_upload_bytes: int = 10 * 1024 * 1024
 
     # ----- Storage -----
     raw_storage_dir: str = "/data/raw"

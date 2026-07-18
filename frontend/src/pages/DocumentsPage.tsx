@@ -7,19 +7,25 @@ import type { ChunkingStrategy, Document } from '../lib/types'
 const STRATEGIES: ChunkingStrategy[] = ['fixed', 'recursive', 'semantic']
 
 // Document corpus states render as an amber "active" pill in the Ember system
-// (ready/completed → amber), with processing/error keeping warn/danger tints.
-function DocStatus({ status }: { status: string }) {
-  const isReady = status === 'ready' || status === 'completed'
+// (completed → amber); pending/processing are in-flight (warn tint); failed is
+// danger red. Values mirror backend IngestionStatus so none fall through unstyled.
+function DocStatus({ status, error }: { status: string; error?: string | null }) {
+  const isReady = status === 'completed' || status === 'ready'
+  const isFailed = status === 'failed' || status === 'error'
   const cls = isReady
     ? 'bg-accent-500/10 text-accent-500'
-    : status === 'processing'
-      ? 'bg-warning-400/10 text-warning-400'
-      : status === 'error'
-        ? 'bg-danger-400/10 text-danger-400'
+    : isFailed
+      ? 'bg-danger-400/10 text-danger-400'
+      : status === 'processing' || status === 'pending'
+        ? 'bg-warning-400/10 text-warning-400'
         : 'bg-surface-200 text-slate-400'
+  const label = isReady ? 'completed' : isFailed ? 'failed' : status
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${cls}`}>
-      {isReady ? 'completed' : status}
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${cls}`}
+      title={isFailed && error ? error : undefined}
+    >
+      {label}
     </span>
   )
 }
@@ -197,6 +203,11 @@ export function DocumentsPage() {
         {clearAll.error && (
           <p className="px-5 pb-3 text-[13px] text-danger-400">{clearAll.error.message}</p>
         )}
+        {deleteDoc.error && (
+          <p className="px-5 pb-3 text-[13px] text-danger-400">
+            Delete failed: {deleteDoc.error.message}
+          </p>
+        )}
         {clearAll.isSuccess && (
           <p className="px-5 pb-3 text-[12px] text-success-400">
             Corpus cleared — {clearAll.data.deleted_count} documents removed.
@@ -244,9 +255,12 @@ export function DocumentsPage() {
                         {doc.title ?? doc.filename}
                       </span>
                     </div>
+                    {doc.status === 'failed' && doc.error && (
+                      <p className="mt-1 line-clamp-2 text-[11px] text-danger-400">{doc.error}</p>
+                    )}
                   </td>
                   <td className="px-5 py-3.5">
-                    <DocStatus status={doc.status} />
+                    <DocStatus status={doc.status} error={doc.error} />
                   </td>
                   <td className="px-5 py-3.5 text-[13px] tabular-nums text-slate-400">
                     {doc.num_chunks}

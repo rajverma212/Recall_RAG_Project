@@ -40,11 +40,15 @@ export function ask(body: AskRequest): Promise<AskResponse> {
   })
 }
 
-export async function* askStream(body: AskRequest): AsyncGenerator<StreamEvent> {
+export async function* askStream(
+  body: AskRequest,
+  signal?: AbortSignal,
+): AsyncGenerator<StreamEvent> {
   const res = await fetch(`${BASE}/ask/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    signal,
   })
   if (!res.ok) {
     const text = await res.text()
@@ -54,24 +58,31 @@ export async function* askStream(body: AskRequest): AsyncGenerator<StreamEvent> 
   if (!reader) throw new Error('No response body')
   const decoder = new TextDecoder()
   let buffer = ''
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() ?? ''
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const json = line.slice(6).trim()
-        if (json) {
-          try {
-            yield JSON.parse(json) as StreamEvent
-          } catch {
-            // skip malformed lines
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const json = line.slice(6).trim()
+          if (json) {
+            try {
+              yield JSON.parse(json) as StreamEvent
+            } catch {
+              // skip malformed lines
+            }
           }
         }
       }
     }
+  } finally {
+    // Consumer stopped early (e.g. user hit "New query") or the signal aborted:
+    // tear down the connection so the backend stops generating tokens nobody
+    // will read. reader.cancel() rejects if already aborted — swallow that.
+    void reader.cancel().catch(() => {})
   }
 }
 

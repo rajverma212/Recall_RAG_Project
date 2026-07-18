@@ -107,7 +107,9 @@ export interface Document {
   title: string | null
   num_pages: number | null
   num_chunks: number
-  status: 'processing' | 'ready' | 'error' | string
+  // Mirrors backend IngestionStatus (app/models/document.py). Kept in sync so a
+  // failed ingest renders correctly instead of falling through to an inert badge.
+  status: 'pending' | 'processing' | 'completed' | 'failed'
   chunking_strategy: string | null
   error: string | null
   ingested_at: string

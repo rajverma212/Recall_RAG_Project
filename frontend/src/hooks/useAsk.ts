@@ -23,10 +23,11 @@ export function useStreamingAsk(): StreamingState {
   const [tokens, setTokens] = useState('')
   const [response, setResponse] = useState<AskResponse | null>(null)
   const [error, setError] = useState<Error | null>(null)
-  const abortRef = useRef(false)
+  const controllerRef = useRef<AbortController | null>(null)
 
   const reset = useCallback(() => {
-    abortRef.current = true
+    controllerRef.current?.abort()
+    controllerRef.current = null
     setStreaming(false)
     setTokens('')
     setResponse(null)
@@ -34,14 +35,16 @@ export function useStreamingAsk(): StreamingState {
   }, [])
 
   const submit = useCallback(async (req: AskRequest) => {
-    abortRef.current = false
+    controllerRef.current?.abort() // cancel any in-flight stream first
+    const controller = new AbortController()
+    controllerRef.current = controller
     setStreaming(true)
     setTokens('')
     setResponse(null)
     setError(null)
     try {
-      for await (const event of askStream(req)) {
-        if (abortRef.current) break
+      for await (const event of askStream(req, controller.signal)) {
+        if (controller.signal.aborted) break
         if (event.type === 'token') {
           setTokens((t) => t + event.text)
         } else if (event.type === 'done') {
@@ -49,11 +52,16 @@ export function useStreamingAsk(): StreamingState {
         }
       }
     } catch (e) {
-      if (!abortRef.current) {
+      // An intentional abort surfaces as an AbortError — not a real failure.
+      if (!controller.signal.aborted) {
         setError(e instanceof Error ? e : new Error(String(e)))
       }
     } finally {
-      setStreaming(false)
+      // Only the latest stream owns the shared UI state; a preempted one bows out.
+      if (controllerRef.current === controller) {
+        controllerRef.current = null
+        setStreaming(false)
+      }
     }
   }, [])
 

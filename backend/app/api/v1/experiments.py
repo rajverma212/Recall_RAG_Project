@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_admin
 from app.db.session import get_db
 from app.models.experiment import Experiment, PromptVersion
 from app.schemas.analytics import ExperimentOut
@@ -27,7 +28,7 @@ def list_experiments(db: Session = Depends(get_db)):
     return list(rows)
 
 
-@router.post("/experiments", response_model=ExperimentOut)
+@router.post("/experiments", response_model=ExperimentOut, dependencies=[Depends(require_admin)])
 def create_experiment(body: ExperimentCreate, db: Session = Depends(get_db)):
     exp = Experiment(name=body.name, description=body.description, config=body.config)
     db.add(exp)
