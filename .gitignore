@@ -15,3 +15,8 @@ evaluation/reports/*.html
 
 # Design handoff reference (not app code)
 design_handoff_recall_ui/
+
+# Runtime ingestion artifacts (UUID-prefixed copies + processed JSON).
+# Source seed docs in sample_data/raw/ (non-UUID names) stay tracked.
+sample_data/processed/
+sample_data/raw/????????-????-????-????-????????????_*
