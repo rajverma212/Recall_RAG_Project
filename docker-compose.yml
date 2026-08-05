@@ -35,8 +35,11 @@ services:
 
   backend:
     build:
+      # Dockerfile lives inside the backend context (not docker/) so Railway's
+      # DOCKERFILE builder can reach it from its `backend` root directory —
+      # a path escaping the root isn't resolvable there. Same image both places.
       context: ./backend
-      dockerfile: ../docker/backend.Dockerfile
+      dockerfile: Dockerfile
     environment:
       POSTGRES_HOST: postgres
       QDRANT_HOST: qdrant
