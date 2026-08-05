@@ -103,10 +103,23 @@ don't invalidate the expensive layer. Two traps found while verifying:
 --network none` loads the cross-encoder and scores 0.9998 relevant / 0.0 irrelevant — i.e. real
 reranking with the network fully removed.
 
-### P1 — Image size is 4.75 GB
-Up from 2.61 GB; 1.13 GB of that is the intentional weights bake. Large images deploy slowly and
-can bump Railway plan limits. Easiest win: a multi-stage build dropping `build-essential`
-(324 MB), which is only needed to compile wheels during install. The pip layer is 1.56 GB.
+### ~~P1 — Image size~~ ✅ PARTLY ADDRESSED 2026-08-04
+Multi-staged the Dockerfile: a `builder` stage compiles wheels and downloads weights, a `runtime`
+stage copies forward only `site-packages`, `/usr/local/bin`, and `/opt/hf`. The build toolchain is
+discarded. **4.75 GB → 4.35 GB.**
+
+One non-obvious dependency: `libgomp1` must be explicitly installed in the runtime stage. It used
+to arrive as a transitive dep of `build-essential`, and without it `import torch` fails with
+`libgomp.so.1: cannot open shared object file`.
+
+Still 4.35 GB — the floor is the 1.56 GB pip layer (torch dominates) plus 1.13 GB of weights.
+Further reduction would mean dropping dev-only deps (`pytest`, `pytest-xdist`, `deepeval`,
+`sentry-sdk`) from the runtime install, worth ~200-400 MB more if deploy size becomes a real
+constraint.
+
+**Verified:** torch 2.13.0+cpu (CPU pin survived the stage copy), lxml/psycopg/sklearn/scipy/numpy
+all import, `app.main` imports, reranking offline scores 0.9979 relevant / 0.0 irrelevant,
+container boots and `/health` returns 200.
 
 ### P1 — Frontend cannot reach the backend when split across hosts
 [api.ts:19](../frontend/src/lib/api.ts#L19) is

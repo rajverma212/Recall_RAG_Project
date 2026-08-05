@@ -1,4 +1,8 @@
-FROM python:3.11-slim
+# ─── Stage 1: builder ───────────────────────────────────────────────────────
+# Compiles wheels and downloads model weights. Everything here that isn't
+# explicitly copied forward is discarded, so the ~324MB build toolchain never
+# reaches the shipped image.
+FROM python:3.11-slim AS builder
 
 # HF_HOME deliberately lives outside /data. /data is a mounted volume in
 # docker-compose (`ragdata:/data`), and a pre-existing non-empty volume shadows
@@ -32,20 +36,43 @@ RUN pip install --upgrade pip \
 # after every cold start pulls ~1.1GB from HuggingFace onto an ephemeral disk —
 # and reranker.py catches a download failure and falls back to lexical scoring
 # *silently*, so a failed pull looks like a healthy boot while the headline
-# reranking feature is quietly off. Kept above `COPY . .` so application code
-# changes don't invalidate this layer. ARG mirrors settings.reranker_model.
+# reranking feature is quietly off. ARG mirrors settings.reranker_model.
 ARG RERANKER_MODEL=BAAI/bge-reranker-base
 RUN mkdir -p /opt/hf \
     && python -c "from sentence_transformers import CrossEncoder; CrossEncoder('${RERANKER_MODEL}', device='cpu')"
+
+# ─── Stage 2: runtime ───────────────────────────────────────────────────────
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/opt/hf
+
+# libgomp1 is the one piece of the build toolchain torch genuinely needs at
+# runtime — it was previously supplied as a transitive dep of build-essential,
+# so dropping that toolchain without this makes `import torch` fail with
+# "libgomp.so.1: cannot open shared object file". curl is kept for container
+# healthchecks/debugging (~2MB).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Installed packages, console scripts (uvicorn), and the baked weights.
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /opt/hf /opt/hf
 
 # Baking the weights is necessary but not sufficient: huggingface_hub still
 # contacts the Hub to revalidate a cached model before loading it, so a Hub
 # outage or rate-limit at cold start would raise — and reranker.py catches that
 # and degrades to lexical scoring silently. Pinning offline mode forces the
 # baked cache to be authoritative and removes the network from the boot path.
-# Set *after* the download above, which needs the network.
 ENV HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1
+
+WORKDIR /app
 
 COPY . .
 
