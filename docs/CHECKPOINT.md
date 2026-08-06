@@ -1,25 +1,31 @@
 # Session Checkpoint — Resume Here
 
-**Updated:** 2026-08-03
+**Updated:** 2026-08-05
 **Branch:** `main`
-**HEAD:** `33f41d9` — `chore: untrack runtime ingestion artifacts from sample_data`
-**Git state:** ✅ Working tree clean · ✅ `main == origin/main` · ✅ No stashes. **Nothing to push.**
+**Git state:** ✅ Working tree clean · ✅ `main == origin/main` · ✅ No stashes.
 **Remote:** `git@github.com:rajverma212/Recall_RAG_Project.git`
 
 ---
 
 ## TL;DR for resuming
 
-The `production-hardening` branch was merged into `main` and three further passes landed on top
-(frontend clarity → security/confidence hardening → repo cleanup). Everything is committed and
-pushed. No work is in flight.
+**Decision made: deploy on free hosting, pay only for Anthropic generation.**
+Stack = Hugging Face Spaces (backend) + Neon (Postgres) + Qdrant Cloud (vectors) + Vercel
+(frontend). All four free tiers. Embeddings keyless via `bge-small-en-v1.5` baked into the image.
+Full runbook with the env-var manifest: **[DEPLOY_FREE_STACK.md](DEPLOY_FREE_STACK.md)** — that
+is the document to open first next session.
 
-**The platform runs correctly but is not deployed anywhere.** That is the single biggest gap
-between where this is and a finished portfolio piece. See [Path to live](#path-to-live-ordered).
+Both **P0 deploy blockers are fixed and verified**; the code side of deployment is done. What
+remains is provisioning, which needs your accounts:
 
-Both **P0 deploy blockers are now fixed and verified** (Railway builder + baked reranker weights).
-The remaining items are P1/P2 — configuration and polish, not blockers. Next concrete step is
-provisioning Railway + Qdrant Cloud and setting the production env vars.
+1. Create the Qdrant Cloud free cluster → `QDRANT_URL` + `QDRANT_API_KEY`
+2. Create the Neon project → `DATABASE_URL`
+3. Create the HF Space (SDK = Docker), `git subtree push --prefix backend hf main`, set secrets
+4. Vercel: root dir `frontend/`, set `VITE_API_BASE` to the Space URL **before** first build
+5. Pin `ALLOWED_ORIGINS` to the Vercel domain, set `ADMIN_API_KEY`, seed the corpus
+
+The platform still is not deployed anywhere — that remains the single biggest gap between this
+and a finished portfolio piece.
 
 ---
 
@@ -52,6 +58,17 @@ provisioning Railway + Qdrant Cloud and setting the production env vars.
 ### 3. Repo cleanup (`33f41d9`, 2026-07-23)
 - Untracked UUID-prefixed raw copies + processed JSON from `sample_data/` (regenerated on ingest)
   and gitignored them. ~7,400 lines removed. Files remain on disk; original seed docs still tracked.
+
+### 4. Deployment unblocking (2026-08-04 → 08-05)
+- `11e0cb2` — both P0 blockers: Railway builder + baked reranker weights (details below).
+- `89cd3a2` — multi-stage Dockerfile; build toolchain no longer ships. 4.75 GB → 4.35 GB.
+- `f914e56` — `DATABASE_URL` support for managed Postgres. Neon/Supabase issue one connection
+  string with `?sslmode=require`, which the discrete `POSTGRES_*` form could not express — there
+  was no way to point the app at managed Postgres at all. Bare `postgres://` / `postgresql://`
+  schemes are rewritten to `postgresql+psycopg://` (SQLAlchemy maps both to psycopg2, which this
+  project does not install). +8 tests; suite now **121 passing**.
+- Docs: [DEPLOY_FREE_STACK.md](DEPLOY_FREE_STACK.md) runbook, [backend/README.md](../backend/README.md)
+  with HF Space frontmatter.
 
 ---
 

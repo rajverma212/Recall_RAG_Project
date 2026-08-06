@@ -32,14 +32,22 @@ RUN pip install --upgrade pip \
     && pip install --index-url https://download.pytorch.org/whl/cpu torch \
     && pip install -r requirements.txt
 
-# Bake the cross-encoder weights into the image. Without this, the first /ask
-# after every cold start pulls ~1.1GB from HuggingFace onto an ephemeral disk —
-# and reranker.py catches a download failure and falls back to lexical scoring
+# Bake model weights into the image. Without this, the first /ask after every
+# cold start pulls ~1.1GB from HuggingFace onto an ephemeral disk — and
+# reranker.py catches a download failure and falls back to lexical scoring
 # *silently*, so a failed pull looks like a healthy boot while the headline
-# reranking feature is quietly off. ARG mirrors settings.reranker_model.
+# reranking feature is quietly off.
+#
+# Both models are baked because the runtime stage pins HF_HUB_OFFLINE=1, which
+# makes anything not present here unfetchable. bge-small-en-v1.5 (~130MB) is the
+# keyless embedding path (EMBEDDING_PROVIDER=bge); omitting it would leave that
+# provider permanently broken in any deployment without an OpenAI key.
+# ARGs mirror settings.reranker_model / settings.bge_embedding_model.
 ARG RERANKER_MODEL=BAAI/bge-reranker-base
+ARG BGE_EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
 RUN mkdir -p /opt/hf \
-    && python -c "from sentence_transformers import CrossEncoder; CrossEncoder('${RERANKER_MODEL}', device='cpu')"
+    && python -c "from sentence_transformers import CrossEncoder; CrossEncoder('${RERANKER_MODEL}', device='cpu')" \
+    && python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${BGE_EMBEDDING_MODEL}', device='cpu')"
 
 # ─── Stage 2: runtime ───────────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
