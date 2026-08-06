@@ -15,7 +15,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        # Fields carrying a validation_alias (database_url_override -> DATABASE_URL)
+        # are otherwise settable *only* by that alias, which would make direct
+        # construction in tests and scripts silently fall through to defaults.
+        populate_by_name=True,
     )
 
     # ----- App -----
@@ -65,12 +71,33 @@ class Settings(BaseSettings):
     postgres_host: str = "postgres"
     postgres_port: int = 5432
 
+    # Managed Postgres (Neon, Supabase, Railway) issues one connection string
+    # rather than discrete parts, usually carrying query args like
+    # ?sslmode=require that the assembled form below cannot express. When
+    # DATABASE_URL is set it takes precedence, mirroring how QDRANT_URL
+    # overrides QDRANT_HOST/QDRANT_PORT.
+    database_url_override: str = Field(
+        default="",
+        validation_alias="DATABASE_URL",
+        description="Full SQLAlchemy/libpq connection string; overrides POSTGRES_* when set",
+    )
+
     @property
     def database_url(self) -> str:
-        return (
-            f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
-            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
-        )
+        override = self.database_url_override.strip()
+        if not override:
+            return (
+                f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
+                f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+            )
+        # Providers hand out `postgres://` or `postgresql://`. SQLAlchemy maps
+        # both to psycopg2, which this project does not install (it uses
+        # psycopg 3), so the driver has to be named explicitly or engine
+        # creation fails with ModuleNotFoundError: no module named 'psycopg2'.
+        for scheme in ("postgresql://", "postgres://"):
+            if override.startswith(scheme):
+                return "postgresql+psycopg://" + override[len(scheme) :]
+        return override
 
     # ----- Qdrant -----
     qdrant_host: str = "qdrant"
