@@ -27,6 +27,42 @@ remains is provisioning, which needs your accounts:
 The platform still is not deployed anywhere — that remains the single biggest gap between this
 and a finished portfolio piece.
 
+### ⚠️ Two things to handle first next session
+
+**1. Docker Desktop's VM disk is unhealthy (as of 2026-08-05).** Builds began failing with I/O
+errors from the storage layer, not from anything in the Dockerfile:
+
+```
+failed to copy file info: ... input/output error
+failed to solve: write /var/lib/desktop-containerd/daemon/io.containerd.metadata.v1.bolt/meta.db: input/output error
+```
+
+`docker images` also failed reading a blob. A restart did not bring the daemon back within 5
+minutes. Earlier in the same session the daemon died mid-export twice, so this had been building
+for a while. The remaining fix is Docker Desktop → Troubleshoot → *Clean / Purge data* or *Reset
+to factory defaults*, which **destroys all volumes — `pgdata`, `qdrantdata`, `ragdata` included**.
+Any locally ingested corpus is lost; the seed files in `sample_data/raw/` are tracked in git and
+can be re-ingested. Note the Docker VM was allocated only 4.1 GB RAM, which is tight for exporting
+a 4.35 GB image — worth raising while you are in Settings.
+
+**2. The two-model bake is UNVERIFIED.** `2605b50` added `bge-small-en-v1.5` to the image
+alongside the cross-encoder. Both models *did* download successfully (build step 6/6, 121.7s)
+before the storage layer failed on the following `COPY --from=builder`, so the Dockerfile is
+likely fine — but the image never exported. Once Docker is healthy:
+
+```bash
+docker compose build backend
+docker run --rm --network none --entrypoint python rag_resume_project-backend:latest -c "
+from sentence_transformers import CrossEncoder, SentenceTransformer
+CrossEncoder('BAAI/bge-reranker-base', device='cpu')
+SentenceTransformer('BAAI/bge-small-en-v1.5', device='cpu')
+print('both models load offline')"
+```
+
+That must pass before deploying, because `HF_HUB_OFFLINE=1` makes any un-baked model unfetchable
+at runtime — a failure would surface as `EMBEDDING_PROVIDER=bge` breaking on the Space.
+Also re-check the image size; it was 4.35 GB with one model baked.
+
 ---
 
 ## What landed since the last checkpoint
